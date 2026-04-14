@@ -1,0 +1,33 @@
+package com.campus.userservice.controller;
+
+import java.time.LocalDateTime;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.campus.userservice.dto.SignUpRequest;
+import com.campus.userservice.entity.User;
+import com.campus.userservice.response.ApiResponse;
+import com.campus.userservice.service.UserService;
+
+import jakarta.validation.Valid;
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    @Autowired private  UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+    @PostMapping("/signup")
+    public ApiResponse<User> signup(@Valid @RequestBody SignUpRequest request) {
+
+        log.info("➡️ Signup request received for email: {}", request.getEmail());
+
+        User user = userService.registerUser(request);
+
+        log.info("✅ User registered successfully for email: {}", request.getEmail());
+
+        return ApiResponse.success(user, "User registered successfully");
+    }
+}
