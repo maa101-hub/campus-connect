@@ -3,19 +3,32 @@ package com.campus.userservice.service;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.campus.userservice.entity.Otp;
+import com.campus.userservice.entity.User;
 import com.campus.userservice.exception.BadRequestException;
 import com.campus.userservice.repository.OtpRepository;
+import com.campus.userservice.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class OtpServiceImpl implements OtpService {
 
-    @Autowired private  OtpRepository otpRepository;
+    private static final Logger log = LoggerFactory.getLogger(OtpServiceImpl.class);
 
+    @Autowired private  OtpRepository otpRepository;
+    @Autowired private UserRepository userRepository;
+
+    @Override
     public void sendOtp(String email) {
+
+        log.info("📩 Generating OTP for email: {}", email);
 
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 
@@ -27,15 +40,25 @@ public class OtpServiceImpl implements OtpService {
 
         otpRepository.save(otpEntity);
 
-        System.out.println("OTP for " + email + " is: " + otp); // temp
+        log.info("✅ OTP generated for email: {}", email);
+        System.out.println("OTP: " + otp); // temp (email baad me)
     }
 
+    @Override
     public void verifyOtp(String email, String otp) {
+
+        log.info("🔍 Verifying OTP for email: {}", email);
 
         Otp otpEntity = otpRepository
                 .findTopByEmailOrderByExpiryTimeDesc(email)
                 .orElseThrow(() -> new BadRequestException("OTP not found"));
-
+        log.info("🔍 Finding user by  email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+        log.info("User successfully fetched and email is verified: {}", user.getName());
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        log.info("update the email is verified status is true");
         if (otpEntity.isUsed()) {
             throw new BadRequestException("OTP already used");
         }
@@ -50,5 +73,7 @@ public class OtpServiceImpl implements OtpService {
 
         otpEntity.setUsed(true);
         otpRepository.save(otpEntity);
+
+        log.info("🎉 OTP verified successfully for email: {}", email);
     }
 }
