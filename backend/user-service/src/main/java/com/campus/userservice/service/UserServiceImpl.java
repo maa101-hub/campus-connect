@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.SignUpRequest;
 import com.campus.userservice.entity.Role;
 import com.campus.userservice.entity.User;
 import com.campus.userservice.entity.VerificationStatus;
+import com.campus.userservice.exception.BadRequestException;
 import com.campus.userservice.exception.DuplicateResourceException;
 import com.campus.userservice.repository.UserRepository;
 import org.slf4j.Logger;
@@ -57,5 +59,26 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
         log.info("🎉 User registration completed for email: {}", request.getEmail());
         return savedUser;
+    }
+    @Override
+    public User loginUser(LoginRequest request) {
+
+        log.info("🔐 Login attempt for email: {}", request.getEmail());
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.error("❌ Wrong password for email: {}", request.getEmail());
+            throw new BadRequestException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new BadRequestException("Email not verified");
+        }
+
+        log.info("✅ Login successful for email: {}", request.getEmail());
+
+        return user;
     }
 }
