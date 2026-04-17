@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import com.campus.userservice.dto.LoginRequest;
+import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
 import com.campus.userservice.entity.User;
 import com.campus.userservice.response.ApiResponse;
@@ -31,8 +32,8 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<?> login(@Valid @RequestBody LoginRequest request) {
 
-        User user = userService.loginUser(request);
+        LoginResponse response = userService.loginUser(request);
 
-        return ApiResponse.success(user, "Login successful");
+        return ApiResponse.success(response, "Login successful");
     }
 }

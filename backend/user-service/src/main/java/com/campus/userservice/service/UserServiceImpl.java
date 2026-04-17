@@ -7,6 +7,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.campus.userservice.dto.LoginRequest;
+import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
 import com.campus.userservice.entity.Role;
 import com.campus.userservice.entity.User;
@@ -14,6 +15,8 @@ import com.campus.userservice.entity.VerificationStatus;
 import com.campus.userservice.exception.BadRequestException;
 import com.campus.userservice.exception.DuplicateResourceException;
 import com.campus.userservice.repository.UserRepository;
+import com.campus.userservice.security.JwtUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired private UserRepository userRepository;
     @Autowired private  BCryptPasswordEncoder passwordEncoder;
+    @Autowired private JwtUtil jwtUtil;
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     @Override
     public User registerUser(SignUpRequest request) {
@@ -60,8 +64,9 @@ public class UserServiceImpl implements UserService {
         log.info("🎉 User registration completed for email: {}", request.getEmail());
         return savedUser;
     }
+    
     @Override
-    public User loginUser(LoginRequest request) {
+    public LoginResponse loginUser(LoginRequest request) {
 
         log.info("🔐 Login attempt for email: {}", request.getEmail());
 
@@ -69,7 +74,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            log.error("❌ Wrong password for email: {}", request.getEmail());
             throw new BadRequestException("Invalid email or password");
         }
 
@@ -77,8 +81,13 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Email not verified");
         }
 
-        log.info("✅ Login successful for email: {}", request.getEmail());
+        String token = jwtUtil.generateToken(user.getEmail());
 
-        return user;
+        log.info("✅ JWT generated for email: {}", user.getEmail());
+        log.info("🎉 Login successful for email: {}", user.getEmail());
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+
+        return response;
     }
 }
