@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
+import com.campus.userservice.dto.UserResponse;
 import com.campus.userservice.entity.Role;
 import com.campus.userservice.entity.User;
 import com.campus.userservice.entity.VerificationStatus;
@@ -72,22 +73,45 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
+        log.info("👤 User found for email: {}", request.getEmail());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        	log.error("❌ Invalid password for email: {}", request.getEmail());
             throw new BadRequestException("Invalid email or password");
         }
 
         if (!user.isEmailVerified()) {
+        	log.error("❌ Email not verified for email: {}", request.getEmail());
             throw new BadRequestException("Email not verified");
         }
 
+        log.info("🔑 Generating JWT for email: {}", request.getEmail());
         String token = jwtUtil.generateToken(user.getEmail());
 
         log.info("✅ JWT generated for email: {}", user.getEmail());
         log.info("🎉 Login successful for email: {}", user.getEmail());
         LoginResponse response = new LoginResponse();
         response.setToken(token);
-
+        log.info("🔐 Login process completed for email: {}", request.getEmail());
         return response;
     }
+
+	@Override
+	public UserResponse getCurrentUser(String email) {
+		log.info("Fetching current user details for email: {}", email);
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+
+		log.info("👤 User found for email: {}", email);
+		UserResponse response = new UserResponse();
+		response.setId(user.getId());
+		response.setName(user.getName());
+		response.setEmail(user.getEmail());
+		response.setUsername(user.getUsername());
+		response.setCollegeName(user.getCollegeName());
+		response.setEmailVerified(user.isEmailVerified());
+
+		log.info("✅ User details fetched successfully for email: {}", email);
+		return response;
+	}
 }
