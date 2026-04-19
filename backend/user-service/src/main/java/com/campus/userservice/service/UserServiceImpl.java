@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
+import com.campus.userservice.dto.UpdateProfileRequest;
 import com.campus.userservice.dto.UserResponse;
 import com.campus.userservice.entity.Role;
 import com.campus.userservice.entity.User;
@@ -112,6 +113,32 @@ public class UserServiceImpl implements UserService {
 		response.setEmailVerified(user.isEmailVerified());
 
 		log.info("✅ User details fetched successfully for email: {}", email);
+		return response;
+	}
+	@Override
+	public UserResponse updateProfile(String email, UpdateProfileRequest request) {
+		log.info("Updating profile for email: {}", email);
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+
+		log.info("👤 User found for email: {}", email);
+		user.setName(request.getName());
+		user.setUsername(request.getUsername());
+		user.setUpdatedAt(LocalDateTime.now());
+
+		log.info("💾 Saving updated user to database for email: {}", email);
+		User updatedUser = userRepository.save(user);
+
+		log.info("✅ Profile updated successfully for email: {}", email);
+		UserResponse response = new UserResponse();
+		response.setId(updatedUser.getId());
+		response.setName(updatedUser.getName());
+		response.setEmail(updatedUser.getEmail());
+		response.setUsername(updatedUser.getUsername());
+		response.setCollegeName(updatedUser.getCollegeName());
+		response.setEmailVerified(updatedUser.isEmailVerified());
+
+		log.info("🎉 Profile update process completed for email: {}", email);
 		return response;
 	}
 }
