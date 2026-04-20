@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
@@ -140,5 +141,46 @@ public class UserServiceImpl implements UserService {
 
 		log.info("🎉 Profile update process completed for email: {}", email);
 		return response;
+	}
+
+	@Override
+	public void changePassword(String email,
+	                           ChangePasswordRequest request) {
+
+	    log.info("🔐 Password change request for email: {}", email);
+
+	    User user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> {
+	                log.warn("⚠️ User not found for email: {}", email);
+	                return new BadRequestException("User not found");
+	            });
+
+	    if (!passwordEncoder.matches(
+	            request.getOldPassword(),
+	            user.getPassword())) {
+
+	        log.warn("❌ Incorrect old password attempt for email: {}", email);
+
+	        throw new BadRequestException(
+	                "Old password is incorrect");
+	    }
+
+	    if (passwordEncoder.matches(
+	            request.getNewPassword(),
+	            user.getPassword())) {
+
+	        log.warn("⚠️ New password same as old password for email: {}", email);
+
+	        throw new BadRequestException(
+	                "New password cannot be same as old password");
+	    }
+
+	    user.setPassword(
+	            passwordEncoder.encode(
+	                    request.getNewPassword()));
+
+	    userRepository.save(user);
+
+	    log.info("✅ Password changed successfully for email: {}", email);
 	}
 }

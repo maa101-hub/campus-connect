@@ -1,5 +1,6 @@
 package com.campus.userservice.service;
 
+import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
 import com.campus.userservice.dto.SignUpRequest;
@@ -12,4 +13,5 @@ public interface UserService {
     LoginResponse loginUser(LoginRequest request);
     UserResponse getCurrentUser(String email);
     UserResponse updateProfile(String email, UpdateProfileRequest request);
+    void changePassword(String email, ChangePasswordRequest request);
 }

@@ -5,12 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.UserResponse;
 import com.campus.userservice.response.ApiResponse;
 import com.campus.userservice.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user")
@@ -30,5 +35,18 @@ public class UserController {
         UserResponse response = userService.getCurrentUser(email);
         log.info("User profile fetched successfully for email: {}", email);
         return ApiResponse.success(response, "User profile fetched successfully");
+    }
+    @PutMapping("/change-password")
+    public ApiResponse<?> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        String email = authentication.getName();
+
+        userService.changePassword(email, request);
+
+        return ApiResponse.success(
+                null,
+                "Password changed successfully");
     }
 }
