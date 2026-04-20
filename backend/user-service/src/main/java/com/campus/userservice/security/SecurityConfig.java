@@ -32,6 +32,8 @@ public class SecurityConfig {
         	        "/api/auth/login",
         	        "/api/auth/send-otp",
         	        "/api/auth/verify-otp",
+        	        "/api/auth/forgot-password",
+        	        "/api/auth/reset-password",
         	        "/actuator/**"
         	    ).permitAll()
         	    .anyRequest().authenticated()

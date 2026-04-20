@@ -4,8 +4,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import com.campus.userservice.dto.ForgotPasswordRequest;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
+import com.campus.userservice.dto.ResetPasswordRequest;
 import com.campus.userservice.dto.SignUpRequest;
 import com.campus.userservice.entity.User;
 import com.campus.userservice.response.ApiResponse;
@@ -35,5 +37,25 @@ public class AuthController {
         LoginResponse response = userService.loginUser(request);
 
         return ApiResponse.success(response, "Login successful");
+    }
+    @PostMapping("/forgot-password")
+    public ApiResponse<?> forgotPassword(
+        @Valid @RequestBody ForgotPasswordRequest request) {
+
+        userService.forgotPassword(request.getEmail());
+
+        return ApiResponse.success(
+            null,
+            "OTP sent successfully");
+    }
+    @PostMapping("/reset-password")
+    public ApiResponse<?> resetPassword(
+        @Valid @RequestBody ResetPasswordRequest request) {
+
+        userService.resetPassword(request);
+
+        return ApiResponse.success(
+            null,
+            "Password reset successfully");
     }
 }

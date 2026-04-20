@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.LoginRequest;
 import com.campus.userservice.dto.LoginResponse;
+import com.campus.userservice.dto.ResetPasswordRequest;
 import com.campus.userservice.dto.SignUpRequest;
 import com.campus.userservice.dto.UpdateProfileRequest;
 import com.campus.userservice.dto.UserResponse;
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired private UserRepository userRepository;
     @Autowired private  BCryptPasswordEncoder passwordEncoder;
+    @Autowired private OtpService otpService;
     @Autowired private JwtUtil jwtUtil;
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     @Override
@@ -182,5 +184,39 @@ public class UserServiceImpl implements UserService {
 	    userRepository.save(user);
 
 	    log.info("✅ Password changed successfully for email: {}", email);
+	}
+	@Override
+	public void forgotPassword(String email) {
+
+	    log.info("Forgot password request for {}", email);
+
+	    User user = userRepository.findByEmail(email)
+	        .orElseThrow(() ->
+	            new BadRequestException("User not found"));
+
+	    otpService.sendOtp(email);
+
+	    log.info("OTP sent for forgot password {}", email);
+	}
+	@Override
+	public void resetPassword(ResetPasswordRequest request) {
+
+	    log.info("Reset password request for {}", request.getEmail());
+
+	    User user = userRepository.findByEmail(request.getEmail())
+	        .orElseThrow(() ->
+	            new BadRequestException("User not found"));
+
+	    otpService.verifyOtp(
+	        request.getEmail(),
+	        request.getOtp());
+
+	    user.setPassword(
+	        passwordEncoder.encode(
+	            request.getNewPassword()));
+
+	    userRepository.save(user);
+
+	    log.info("Password reset successful for {}", request.getEmail());
 	}
 }
