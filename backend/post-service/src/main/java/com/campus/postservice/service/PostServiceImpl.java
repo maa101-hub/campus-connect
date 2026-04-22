@@ -3,9 +3,13 @@ package com.campus.postservice.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.campus.postservice.dto.AddCommentRequest;
+import com.campus.postservice.dto.CommentResponse;
 import com.campus.postservice.dto.CreatePostRequest;
 import com.campus.postservice.dto.PostResponse;
+import com.campus.postservice.entity.Comment;
 import com.campus.postservice.entity.Post;
+import com.campus.postservice.repo.CommentRepository;
 import com.campus.postservice.repo.PostRepository;
 
 import java.util.ArrayList;
@@ -16,6 +20,7 @@ import org.slf4j.*;
 public class PostServiceImpl implements PostService {
 
     @Autowired private  PostRepository postRepository;
+    @Autowired private CommentRepository commentRepository;
     private static final Logger log = LoggerFactory.getLogger(PostServiceImpl.class);
     @Override
     public PostResponse createPost(CreatePostRequest request) {
@@ -94,5 +99,54 @@ public class PostServiceImpl implements PostService {
         log.info("Post liked successfully. postId: {}, totalLikes: {}",
                 postId,
                 post.getLikeCount());
+    }
+    @Override
+    public void addComment(Long postId,
+                           AddCommentRequest request) {
+
+        log.info("Adding comment on postId: {}", postId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                    new RuntimeException("Post not found"));
+
+        Comment comment = new Comment();
+
+        comment.setPostId(postId);
+        comment.setUserId(request.getUserId());
+        comment.setUsername(request.getUsername());
+        comment.setContent(request.getContent());
+
+        commentRepository.save(comment);
+
+        post.setCommentCount(post.getCommentCount() + 1);
+        postRepository.save(post);
+
+        log.info("Comment added successfully on postId: {}",
+                postId);
+    }
+    @Override
+    public List<CommentResponse> getComments(Long postId) {
+
+        log.info("Fetching comments for postId: {}", postId);
+
+        List<Comment> comments =
+            commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
+
+        List<CommentResponse> response = new ArrayList<>();
+
+        for (Comment comment : comments) {
+
+            CommentResponse dto = new CommentResponse();
+
+            dto.setId(comment.getId());
+            dto.setUsername(comment.getUsername());
+            dto.setContent(comment.getContent());
+            dto.setCreatedAt(comment.getCreatedAt());
+
+            response.add(dto);
+        }
+
+        return response;
     }
 }
