@@ -8,4 +8,5 @@ import com.campus.postservice.dto.PostResponse;
 public interface PostService {
 	PostResponse createPost(CreatePostRequest request);
 	List<PostResponse> getFeed();
+	void likePost(Long postId);
 }

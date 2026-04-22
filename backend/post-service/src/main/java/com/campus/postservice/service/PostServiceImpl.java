@@ -72,4 +72,27 @@ public class PostServiceImpl implements PostService {
 
         return responseList;
     }
+    @Override
+    public void likePost(Long postId) {
+
+        log.info("Like request received for postId: {}", postId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                        new RuntimeException("Post not found"));
+
+        Integer currentLikes = post.getLikeCount();
+
+        if (currentLikes == null) {
+            currentLikes = 0;
+        }
+
+        post.setLikeCount(currentLikes + 1);
+
+        postRepository.save(post);
+
+        log.info("Post liked successfully. postId: {}, totalLikes: {}",
+                postId,
+                post.getLikeCount());
+    }
 }
