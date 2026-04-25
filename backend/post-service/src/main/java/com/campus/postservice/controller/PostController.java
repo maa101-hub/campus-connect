@@ -7,12 +7,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campus.postservice.dto.AddCommentRequest;
 import com.campus.postservice.dto.CreatePostRequest;
+import com.campus.postservice.dto.UpdatePostRequest;
 import com.campus.postservice.entity.Post;
 import com.campus.postservice.response.ApiResponse;
 import com.campus.postservice.service.PostService;
@@ -93,5 +95,17 @@ public class PostController {
                 null,
                 "Post deleted successfully"));
     }
+    @PutMapping("/{postId}")
+    public ResponseEntity<ApiResponse<?>> updatePost(
+			@PathVariable Long postId,
+			@RequestBody UpdatePostRequest request) {
+
+		postService.updatePost(postId, request);
+
+		return ResponseEntity.ok(
+			ApiResponse.success(
+				null,
+				"Post updated successfully"));
+	}
    
 }

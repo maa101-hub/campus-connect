@@ -7,6 +7,7 @@ import com.campus.postservice.dto.AddCommentRequest;
 import com.campus.postservice.dto.CommentResponse;
 import com.campus.postservice.dto.CreatePostRequest;
 import com.campus.postservice.dto.PostResponse;
+import com.campus.postservice.dto.UpdatePostRequest;
 import com.campus.postservice.entity.Comment;
 import com.campus.postservice.entity.Post;
 import com.campus.postservice.repo.CommentRepository;
@@ -167,5 +168,24 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
 
         log.info("Post deleted successfully. postId: {}", postId);
+    }
+    @Override 
+    public void updatePost(Long postId, UpdatePostRequest request) {
+
+		log.info("Update request received for postId: {}", postId);
+
+		Post post = postRepository.findById(postId)
+				.orElseThrow(() ->
+					new RuntimeException("Post not found"));
+
+		if (!post.getActive()) {
+			throw new RuntimeException("Cannot update deleted post");
+		}
+
+		post.setContent(request.getContent());
+
+		postRepository.save(post);
+
+		log.info("Post updated successfully. postId: {}", postId);
     }
 }

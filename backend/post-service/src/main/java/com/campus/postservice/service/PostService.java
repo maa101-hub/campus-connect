@@ -6,6 +6,7 @@ import com.campus.postservice.dto.AddCommentRequest;
 import com.campus.postservice.dto.CommentResponse;
 import com.campus.postservice.dto.CreatePostRequest;
 import com.campus.postservice.dto.PostResponse;
+import com.campus.postservice.dto.UpdatePostRequest;
 
 public interface PostService {
 	PostResponse createPost(CreatePostRequest request);
@@ -15,4 +16,5 @@ public interface PostService {
 
 	List<CommentResponse> getComments(Long postId);
 	void deletePost(Long postId);
+	void updatePost(Long postId, UpdatePostRequest request);
 }
