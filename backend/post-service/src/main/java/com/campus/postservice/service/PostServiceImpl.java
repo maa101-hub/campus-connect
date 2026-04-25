@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.campus.postservice.dto.AddCommentRequest;
 import com.campus.postservice.dto.CommentResponse;
 import com.campus.postservice.dto.CreatePostRequest;
+import com.campus.postservice.dto.PagedResponse;
 import com.campus.postservice.dto.PostResponse;
 import com.campus.postservice.dto.UpdatePostRequest;
 import com.campus.postservice.entity.Comment;
@@ -56,44 +57,54 @@ public class PostServiceImpl implements PostService {
         return response;
     }
     @Override
-    public List<PostResponse> getFeed(int page, int size) {
+    public PagedResponse<PostResponse> getFeed(
+            int page,
+            int size) {
 
         log.info("Fetching paginated feed page={}, size={}",
                 page, size);
 
         Pageable pageable =
-                PageRequest.of(
-                        page,
-                        size,
-                        Sort.by("createdAt").descending());
+            PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending());
 
         Page<Post> postPage =
-                postRepository.findByActiveTrue(pageable);
+            postRepository.findByActiveTrue(pageable);
 
-        List<PostResponse> responseList =
-                new ArrayList<>();
+        List<PostResponse> posts =
+            new ArrayList<>();
 
         for (Post post : postPage.getContent()) {
 
-            PostResponse response =
-                    new PostResponse();
+            PostResponse dto = new PostResponse();
 
-            response.setId(post.getId());
-            response.setUsername(post.getUsername());
-            response.setContent(post.getContent());
-            response.setCollegeName(post.getCollegeName());
-            response.setImageUrl(post.getImageUrl());
-            response.setLikeCount(post.getLikeCount());
-            response.setCommentCount(post.getCommentCount());
-            response.setCreatedAt(post.getCreatedAt());
+            dto.setId(post.getId());
+            dto.setUsername(post.getUsername());
+            dto.setContent(post.getContent());
+            dto.setCollegeName(post.getCollegeName());
+            dto.setImageUrl(post.getImageUrl());
+            dto.setLikeCount(post.getLikeCount());
+            dto.setCommentCount(post.getCommentCount());
+            dto.setCreatedAt(post.getCreatedAt());
 
-            responseList.add(response);
+            posts.add(dto);
         }
 
-        log.info("Feed fetched successfully. Records={}",
-                responseList.size());
+        PagedResponse<PostResponse> response =
+            new PagedResponse<>();
 
-        return responseList;
+        response.setContent(posts);
+        response.setPage(postPage.getNumber());
+        response.setSize(postPage.getSize());
+        response.setTotalPages(postPage.getTotalPages());
+        response.setTotalElements(postPage.getTotalElements());
+        response.setLast(postPage.isLast());
+
+        log.info("Feed fetched successfully");
+
+        return response;
     }
     @Override
     public void addComment(Long postId,
