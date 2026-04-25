@@ -3,6 +3,7 @@ package com.campus.postservice.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,6 +81,17 @@ public class PostController {
             ApiResponse.success(
                 postService.getComments(postId),
                 "Comments fetched successfully"));
+    }
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<ApiResponse<?>> deletePost(
+            @PathVariable Long postId) {
+
+        postService.deletePost(postId);
+
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                null,
+                "Post deleted successfully"));
     }
    
 }

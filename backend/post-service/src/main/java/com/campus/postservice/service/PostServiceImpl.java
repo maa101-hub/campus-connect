@@ -149,4 +149,23 @@ public class PostServiceImpl implements PostService {
 
         return response;
     }
+    @Override
+    public void deletePost(Long postId) {
+
+        log.info("Delete request received for postId: {}", postId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                    new RuntimeException("Post not found"));
+
+        if (!post.getActive()) {
+            throw new RuntimeException("Post already deleted");
+        }
+
+        post.setActive(false);
+
+        postRepository.save(post);
+
+        log.info("Post deleted successfully. postId: {}", postId);
+    }
 }

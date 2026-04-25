@@ -14,4 +14,5 @@ public interface PostService {
 	void addComment(Long postId, AddCommentRequest request);
 
 	List<CommentResponse> getComments(Long postId);
+	void deletePost(Long postId);
 }
