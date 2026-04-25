@@ -17,4 +17,8 @@ public interface PostService {
 	void deletePost(Long postId);
 	void updatePost(Long postId, UpdatePostRequest request);
 	String toggleLike(Long postId, Long userId);
+	PagedResponse<PostResponse> getCollegeFeed(
+	        String collegeName,
+	        int page,
+	        int size);
 }

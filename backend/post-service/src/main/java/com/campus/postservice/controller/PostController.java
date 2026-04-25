@@ -108,5 +108,19 @@ public class PostController {
                 null,
                 message));
     }
+    @GetMapping("/feed/college")
+    public ResponseEntity<ApiResponse<?>> getCollegeFeed(
+            @RequestParam String collegeName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                postService.getCollegeFeed(
+                    collegeName,
+                    page,
+                    size),
+                "College feed fetched successfully"));
+    }
    
 }

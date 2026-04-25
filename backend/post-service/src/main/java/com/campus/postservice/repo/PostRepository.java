@@ -10,4 +10,7 @@ import com.campus.postservice.entity.Post;
 
 public interface PostRepository  extends JpaRepository<Post, Long> {
 	Page<Post> findByActiveTrue(Pageable pageable);
+	Page<Post> findByActiveTrueAndCollegeNameOrderByCreatedAtDesc(
+	        String collegeName,
+	        Pageable pageable);
 }

@@ -235,4 +235,58 @@ public class PostServiceImpl implements PostService {
             return "Post liked successfully";
         }
     }
+    @Override
+    public PagedResponse<PostResponse> getCollegeFeed(
+            String collegeName,
+            int page,
+            int size) {
+
+        log.info("Fetching college feed for: {}", collegeName);
+
+        Pageable pageable =
+            PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending());
+
+        Page<Post> postPage =
+            postRepository
+            .findByActiveTrueAndCollegeNameOrderByCreatedAtDesc(
+                collegeName,
+                pageable);
+
+        List<PostResponse> posts =
+            new ArrayList<>();
+
+        for (Post post : postPage.getContent()) {
+
+            PostResponse dto =
+                new PostResponse();
+
+            dto.setId(post.getId());
+            dto.setUsername(post.getUsername());
+            dto.setContent(post.getContent());
+            dto.setCollegeName(post.getCollegeName());
+            dto.setImageUrl(post.getImageUrl());
+            dto.setLikeCount(post.getLikeCount());
+            dto.setCommentCount(post.getCommentCount());
+            dto.setCreatedAt(post.getCreatedAt());
+
+            posts.add(dto);
+        }
+
+        PagedResponse<PostResponse> response =
+            new PagedResponse<>();
+
+        response.setContent(posts);
+        response.setPage(postPage.getNumber());
+        response.setSize(postPage.getSize());
+        response.setTotalPages(postPage.getTotalPages());
+        response.setTotalElements(postPage.getTotalElements());
+        response.setLast(postPage.isLast());
+
+        log.info("College feed fetched successfully");
+
+        return response;
+    }
 }
