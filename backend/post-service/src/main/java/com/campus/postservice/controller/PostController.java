@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campus.postservice.dto.AddCommentRequest;
@@ -47,19 +48,6 @@ public class PostController {
                 ApiResponse.success(
                         postService.getFeed(),
                         "Feed fetched successfully");
-
-        return ResponseEntity.ok(response);
-    }
-    @PostMapping("/{postId}/like")
-    public ResponseEntity<ApiResponse<?>> likePost(
-            @PathVariable Long postId) {
-
-        postService.likePost(postId);
-
-        ApiResponse<?> response =
-                ApiResponse.success(
-                        null,
-                        "Post liked successfully");
 
         return ResponseEntity.ok(response);
     }
@@ -107,5 +95,18 @@ public class PostController {
 				null,
 				"Post updated successfully"));
 	}
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<ApiResponse<?>> toggleLike(
+            @PathVariable Long postId,
+            @RequestParam Long userId) {
+
+        String message =
+                postService.toggleLike(postId, userId);
+
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                null,
+                message));
+    }
    
 }

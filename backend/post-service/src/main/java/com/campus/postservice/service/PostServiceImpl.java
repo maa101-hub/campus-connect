@@ -10,11 +10,14 @@ import com.campus.postservice.dto.PostResponse;
 import com.campus.postservice.dto.UpdatePostRequest;
 import com.campus.postservice.entity.Comment;
 import com.campus.postservice.entity.Post;
+import com.campus.postservice.entity.PostLike;
 import com.campus.postservice.repo.CommentRepository;
+import com.campus.postservice.repo.PostLikeRepository;
 import com.campus.postservice.repo.PostRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.*;
 @Service
@@ -22,6 +25,7 @@ public class PostServiceImpl implements PostService {
 
     @Autowired private  PostRepository postRepository;
     @Autowired private CommentRepository commentRepository;
+    @Autowired private PostLikeRepository postLikeRepository;
     private static final Logger log = LoggerFactory.getLogger(PostServiceImpl.class);
     @Override
     public PostResponse createPost(CreatePostRequest request) {
@@ -77,29 +81,6 @@ public class PostServiceImpl implements PostService {
                 responseList.size());
 
         return responseList;
-    }
-    @Override
-    public void likePost(Long postId) {
-
-        log.info("Like request received for postId: {}", postId);
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() ->
-                        new RuntimeException("Post not found"));
-
-        Integer currentLikes = post.getLikeCount();
-
-        if (currentLikes == null) {
-            currentLikes = 0;
-        }
-
-        post.setLikeCount(currentLikes + 1);
-
-        postRepository.save(post);
-
-        log.info("Post liked successfully. postId: {}, totalLikes: {}",
-                postId,
-                post.getLikeCount());
     }
     @Override
     public void addComment(Long postId,
@@ -187,5 +168,47 @@ public class PostServiceImpl implements PostService {
 		postRepository.save(post);
 
 		log.info("Post updated successfully. postId: {}", postId);
+    }
+    @Override
+    public String toggleLike(Long postId,
+                             Long userId) {
+
+        log.info("Like toggle request postId={}, userId={}",
+                postId, userId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                    new RuntimeException("Post not found"));
+
+        Optional<PostLike> existingLike =
+            postLikeRepository
+            .findByPostIdAndUserId(postId, userId);
+
+        if (existingLike.isPresent()) {
+
+            postLikeRepository.delete(existingLike.get());
+
+            post.setLikeCount(post.getLikeCount() - 1);
+            postRepository.save(post);
+
+            log.info("Post unliked");
+
+            return "Post unliked successfully";
+
+        } else {
+
+            PostLike like = new PostLike();
+            like.setPostId(postId);
+            like.setUserId(userId);
+
+            postLikeRepository.save(like);
+
+            post.setLikeCount(post.getLikeCount() + 1);
+            postRepository.save(post);
+
+            log.info("Post liked");
+
+            return "Post liked successfully";
+        }
     }
 }
