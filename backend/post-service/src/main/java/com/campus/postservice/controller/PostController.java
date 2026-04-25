@@ -42,14 +42,14 @@ public class PostController {
                 .body(response);
     }
     @GetMapping("/feed")
-    public ResponseEntity<ApiResponse<?>> getFeed() {
-       
-        ApiResponse<?> response =
-                ApiResponse.success(
-                        postService.getFeed(),
-                        "Feed fetched successfully");
+    public ResponseEntity<ApiResponse<?>> getFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                postService.getFeed(page, size),
+                "Feed fetched successfully"));
     }
     @PostMapping("/{postId}/comments")
     public ResponseEntity<ApiResponse<?>> addComment(

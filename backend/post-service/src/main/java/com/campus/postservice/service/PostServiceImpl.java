@@ -1,6 +1,10 @@
 package com.campus.postservice.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.campus.postservice.dto.AddCommentRequest;
@@ -52,18 +56,27 @@ public class PostServiceImpl implements PostService {
         return response;
     }
     @Override
-    public List<PostResponse> getFeed() {
+    public List<PostResponse> getFeed(int page, int size) {
 
-        log.info("Fetching feed posts");
+        log.info("Fetching paginated feed page={}, size={}",
+                page, size);
 
-        List<Post> posts =
-                postRepository.findByActiveTrueOrderByCreatedAtDesc();
-        log.info("Total active posts fetched: {}", posts.size());
-        List<PostResponse> responseList = new ArrayList<>();
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by("createdAt").descending());
 
-        for (Post post : posts) {
+        Page<Post> postPage =
+                postRepository.findByActiveTrue(pageable);
 
-            PostResponse response = new PostResponse();
+        List<PostResponse> responseList =
+                new ArrayList<>();
+
+        for (Post post : postPage.getContent()) {
+
+            PostResponse response =
+                    new PostResponse();
 
             response.setId(post.getId());
             response.setUsername(post.getUsername());
@@ -77,7 +90,7 @@ public class PostServiceImpl implements PostService {
             responseList.add(response);
         }
 
-        log.info("Feed fetched successfully. Total posts: {}",
+        log.info("Feed fetched successfully. Records={}",
                 responseList.size());
 
         return responseList;

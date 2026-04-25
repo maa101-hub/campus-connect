@@ -10,7 +10,7 @@ import com.campus.postservice.dto.UpdatePostRequest;
 
 public interface PostService {
 	PostResponse createPost(CreatePostRequest request);
-	List<PostResponse> getFeed();
+	List<PostResponse> getFeed(int page, int size);
 	void addComment(Long postId, AddCommentRequest request);
 	List<CommentResponse> getComments(Long postId);
 	void deletePost(Long postId);
