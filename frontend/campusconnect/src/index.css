@@ -1,7 +1,145 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ─────────────────────────────────────────── */
+:root {
+  --color-brand-purple:  #9d4edd;
+  --color-brand-violet:  #9719fd;
+  --color-bg:            #0a0010;
+  --font-manrope:        'Manrope', sans-serif;
+  --font-poppins:        'Poppins', sans-serif;
+  --font-sail:           'Sail', cursive;
+}
+
+/* ─── Base reset ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f8fafc;
+  padding: 0;
+  background: var(--color-bg);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+button, input, select, textarea {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-family: inherit;
+}
+
+/* ─── Utility classes ───────────────────────────────────────── */
+.font-manrope  { font-family: var(--font-manrope); }
+.font-poppins  { font-family: var(--font-poppins); }
+.font-sail     { font-family: var(--font-sail); }
+
+/* ─── Keyframe animations ───────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes shimmer {
+  0%, 90%, to { background-position: calc(-100% - var(--shimmer-width, 120px)) 0; }
+  30%, 60%    { background-position: calc(100%  + var(--shimmer-width, 120px)) 0; }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100% - var(--gap, 1rem))); }
+}
+
+@keyframes orb-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(40px, -30px) scale(1.05); }
+  66%  { transform: translate(-20px, 20px) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* ─── Animation helpers ─────────────────────────────────────── */
+.animate-fade-in   { animation: fade-in  0.8s ease both; }
+.animate-fade-up   { animation: fade-up  0.8s ease both; }
+.animate-float     { animation: float    4s  ease-in-out infinite; }
+.animate-glow      { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-spin      { animation: spin 1s linear infinite; }
+.animate-marquee   { animation: marquee var(--duration, 20s) linear infinite; }
+.animate-orb       { animation: orb-drift 12s ease-in-out infinite; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0010; }
+::-webkit-scrollbar-thumb { background: #9d4edd55; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9d4edd; }
+
+/* ─── Staggered card float ───────────────────────────────────── */
+@keyframes card-float-1 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes card-float-2 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+@keyframes card-float-3 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ─── Scroll indicator bounce ───────────────────────────────── */
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.5; }
+  50%       { transform: translateX(-50%) translateY(8px); opacity: 1; }
+}
+
+/* ─── Section bridge gradients ──────────────────────────────── */
+.section-bridge-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, #0a0010);
+  pointer-events: none;
+  z-index: 5;
+}
+.section-bridge-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to top, transparent, #0a0010);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ─── Signup modal input placeholders ───────────────────────── */
+#modal-name::placeholder,
+#modal-email::placeholder,
+#modal-password::placeholder,
+#modal-confirm::placeholder,
+#modal-login-email::placeholder,
+#modal-login-password::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-family: 'Manrope', sans-serif;
 }
