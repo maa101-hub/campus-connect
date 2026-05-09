@@ -13,4 +13,7 @@ public interface PostRepository  extends JpaRepository<Post, Long> {
 	Page<Post> findByActiveTrueAndCollegeNameOrderByCreatedAtDesc(
 	        String collegeName,
 	        Pageable pageable);
+	Page<Post> findByActiveTrueAndUserIdOrderByCreatedAtDesc(
+	        Long userId,
+	        Pageable pageable);
 }

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CampusConnectHero from './components/CampusConnectHero';
+import Dashboard from './pages/Dashboard';
+import useAuthStore from './store/authStore';
 
 // ─── Page load splash screen ──────────────────────────────────────────────────
 const Splash = ({ onDone }) => {
@@ -29,7 +32,6 @@ const Splash = ({ onDone }) => {
         transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}
       >
-        {/* Purple orb icon */}
         <motion.div
           animate={{ boxShadow: ['0 0 30px rgba(151,25,253,0.4)', '0 0 70px rgba(151,25,253,0.9)', '0 0 30px rgba(151,25,253,0.4)'] }}
           transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
@@ -45,7 +47,6 @@ const Splash = ({ onDone }) => {
           </svg>
         </motion.div>
 
-        {/* Wordmark */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -56,7 +57,6 @@ const Splash = ({ onDone }) => {
         </motion.p>
       </motion.div>
 
-      {/* Loading bar */}
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: '140px' }}
@@ -70,22 +70,38 @@ const Splash = ({ onDone }) => {
 // ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   const [ready, setReady] = useState(false);
+  const { isAuthenticated, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (!ready) {
+    return <Splash key="splash" onDone={() => setReady(true)} />;
+  }
 
   return (
-    <AnimatePresence mode="wait">
-      {!ready ? (
-        <Splash key="splash" onDone={() => setReady(true)} />
-      ) : (
+    <Router>
+      <AnimatePresence mode="wait">
         <motion.div
           key="app"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          style={{ width: '100%', minHeight: '100vh' }}
         >
-          <CampusConnectHero />
+          <Routes>
+            <Route path="/" element={<CampusConnectHero />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
+              } 
+            />
+          </Routes>
         </motion.div>
-      )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </Router>
   );
 }
 

@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.ForgotPasswordRequest;
@@ -24,8 +26,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/user")
 public class UserController {
 
-    @Autowired private  UserService userService;
-   private Logger log = LoggerFactory.getLogger(UserController.class);
+    @Autowired
+    private UserService userService;
+    private Logger log = LoggerFactory.getLogger(UserController.class);
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -39,6 +43,7 @@ public class UserController {
         log.info("User profile fetched successfully for email: {}", email);
         return ApiResponse.success(response, "User profile fetched successfully");
     }
+
     @PutMapping("/change-password")
     public ApiResponse<?> changePassword(
             Authentication authentication,
@@ -51,5 +56,23 @@ public class UserController {
         return ApiResponse.success(
                 null,
                 "Password changed successfully");
+    }
+
+    @PutMapping("/profile")
+    public ApiResponse<UserResponse> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody com.campus.userservice.dto.UpdateProfileRequest request) {
+        
+        log.info("Updating profile for user: {}", authentication.getName());
+        UserResponse response = userService.updateProfile(authentication.getName(), request);
+        return ApiResponse.success(response, "Profile updated successfully");
+    }
+
+    @GetMapping("/college")
+    public ApiResponse<List<UserResponse>> getCollegeUsers(
+            @RequestParam String collegeName) {
+        log.info("Fetching users for college: {}", collegeName);
+        List<UserResponse> users = userService.getCollegeUsers(collegeName);
+        return ApiResponse.success(users, "College users fetched successfully");
     }
 }

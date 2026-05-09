@@ -52,4 +52,8 @@ public class PostResponse {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    private boolean hasLiked;
+    public boolean isHasLiked() { return hasLiked; }
+    public void setHasLiked(boolean hasLiked) { this.hasLiked = hasLiked; }
 }

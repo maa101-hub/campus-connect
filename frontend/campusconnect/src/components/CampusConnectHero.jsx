@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import Navbar from './layout/Navbar';
+import Footer from './layout/Footer';
 import HeroSection from './sections/HeroSection';
 import CommunitySection from './sections/CommunitySection';
+import ContactSection from './sections/ContactSection';
+import AboutSection from './sections/AboutSection';
 import SignupSection from './sections/SignupSection';
 
 /**
@@ -10,8 +13,10 @@ import SignupSection from './sections/SignupSection';
  * Top-level page shell. Controls the signup overlay state.
  *  • Navbar  (fixed, scroll-aware)
  *  • HeroSection — "Get Started" opens signup overlay
- *  • CommunitySection — scrollable second section
- *  • SignupSection — full-screen overlay, only shown on demand
+ *  • AboutSection — Story and mission
+ *  • CommunitySection — Live feed and cards
+ *  • ContactSection — Get in touch
+ *  • Footer — Site links and credits
  */
 const CampusConnectHero = () => {
   const [showSignup, setShowSignup] = useState(false);
@@ -26,8 +31,13 @@ const CampusConnectHero = () => {
       }}
     >
       <Navbar onOpenSignup={() => setShowSignup(true)} />
+      
       <HeroSection onOpenSignup={() => setShowSignup(true)} />
+      <AboutSection />
       <CommunitySection />
+      <ContactSection />
+      
+      <Footer />
 
       {/* Signup modal — only mounts when triggered */}
       {showSignup && (

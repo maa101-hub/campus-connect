@@ -11,14 +11,20 @@ import com.campus.postservice.dto.UpdatePostRequest;
 
 public interface PostService {
 	PostResponse createPost(CreatePostRequest request);
-	PagedResponse<PostResponse> getFeed(int page, int size);
+	PagedResponse<PostResponse> getFeed(Long currentUserId, int page, int size);
 	void addComment(Long postId, AddCommentRequest request);
 	List<CommentResponse> getComments(Long postId);
 	void deletePost(Long postId);
 	void updatePost(Long postId, UpdatePostRequest request);
 	String toggleLike(Long postId, Long userId);
 	PagedResponse<PostResponse> getCollegeFeed(
+			Long currentUserId,
 	        String collegeName,
+	        int page,
+	        int size);
+	PagedResponse<PostResponse> getUserPosts(
+			Long currentUserId,
+	        Long targetUserId,
 	        int page,
 	        int size);
 }

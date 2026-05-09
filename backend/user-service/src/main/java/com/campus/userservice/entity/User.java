@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id
@@ -42,6 +44,13 @@ public class User {
     // Role
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // Advanced Profile Info
+    private String bio;
+    private String major;
+    private String yearOfStudy;
+    private String skills;
+    private String interests;
 
     // Timestamps
     private LocalDateTime createdAt;

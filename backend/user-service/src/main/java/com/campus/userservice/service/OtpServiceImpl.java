@@ -52,13 +52,6 @@ public class OtpServiceImpl implements OtpService {
         Otp otpEntity = otpRepository
                 .findTopByEmailOrderByExpiryTimeDesc(email)
                 .orElseThrow(() -> new BadRequestException("OTP not found"));
-        log.info("🔍 Finding user by  email: {}", email);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("User not found"));
-        log.info("User successfully fetched and email is verified: {}", user.getName());
-        user.setEmailVerified(true);
-        userRepository.save(user);
-        log.info("update the email is verified status is true");
         if (otpEntity.isUsed()) {
             throw new BadRequestException("OTP already used");
         }
@@ -70,6 +63,11 @@ public class OtpServiceImpl implements OtpService {
         if (!otpEntity.getOtp().equals(otp)) {
             throw new BadRequestException("Invalid OTP");
         }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+        user.setEmailVerified(true);
+        userRepository.save(user);
 
         otpEntity.setUsed(true);
         otpRepository.save(otpEntity);

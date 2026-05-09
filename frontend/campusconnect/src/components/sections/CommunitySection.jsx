@@ -18,7 +18,7 @@ const posts = [
   {
     id: 1,
     text: 'Anyone from CSE 3rd year?',
-    meta: '💬  24 replies',
+    meta: <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ display: 'inline', marginRight: '4px' }}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg> 24 replies</>,
     top: '20%',
     right: '5%',
     delay: 0.3,
@@ -26,7 +26,7 @@ const posts = [
   {
     id: 2,
     text: 'Hackathon 2026 registration open',
-    meta: '❤️  200 likes',
+    meta: <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ display: 'inline', marginRight: '4px' }}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg> 200 likes</>,
     top: '45%',
     right: '8%',
     delay: 0.55,
@@ -34,7 +34,7 @@ const posts = [
   {
     id: 3,
     text: 'Today Is Trending 😊',
-    meta: '🔥  1.2k views',
+    meta: <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ display: 'inline', marginRight: '4px' }}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 1.2k views</>,
     top: '68%',
     right: '12%',
     delay: 0.8,
@@ -118,6 +118,13 @@ const CommunitySection = () => {
     <section
       id="community"
       ref={sectionRef}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        sectionRef.current.style.setProperty('--mx', x);
+        sectionRef.current.style.setProperty('--my', y);
+      }}
       aria-label="Campus community activity"
       style={{
         position: 'relative',
@@ -129,6 +136,28 @@ const CommunitySection = () => {
         alignItems: 'center',
       }}
     >
+      <style>{`
+        @media (max-width: 991px) {
+          .community-main-grid { 
+            grid-template-columns: 1fr !important;
+            text-align: center !important;
+          }
+          .community-spacer { display: none !important; }
+          .community-girl-img {
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            opacity: 0.15 !important;
+            z-index: 1 !important;
+            object-fit: cover !important;
+          }
+          .community-text-wrapper {
+            align-items: center !important;
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+
       {/* ── Seamless top bridge from HeroSection ── */}
       <div className="section-bridge-top" aria-hidden="true" />
       {/* ── Floating particles (same as hero) ── */}
@@ -194,16 +223,25 @@ const CommunitySection = () => {
       />
 
       {/* ── CHARACTER IMAGE — exact same technique as hero but mirrored to left ── */}
-      {/* Hero: left:40%, right:-5%, width:62%, objectFit:cover, mask fades to left */}
-      {/* Community: right:40%, left:-5%, width:65%, objectFit:cover, mask fades to right */}
       <motion.img
         src={girl2Img}
+        className="community-girl-img"
         alt=""
         aria-hidden="true"
         initial={{ opacity: 0, x: -40 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+        animate={{ 
+          y: [0, -10, 0],
+          rotateX: 'calc(var(--my) * -8deg)',
+          rotateY: 'calc(var(--mx) * 12deg)',
+        }}
+        transition={{ 
+          y: { duration: 4, repeat: Infinity, ease: 'easeInOut' }, 
+          opacity: { duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] },
+          rotateX: { type: 'spring', damping: 25, stiffness: 120 },
+          rotateY: { type: 'spring', damping: 25, stiffness: 120 },
+        }}
         style={{
           position: 'absolute',
           top: 0,
@@ -218,6 +256,7 @@ const CommunitySection = () => {
           maskImage: 'linear-gradient(to right, rgba(0,0,0,1) 40%, rgba(0,0,0,0.7) 65%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1) 40%, rgba(0,0,0,0.7) 65%, transparent 100%)',
           filter: 'drop-shadow(0 0 60px rgba(151,25,253,0.3))',
+          transformStyle: 'preserve-3d',
           zIndex: 2,
         }}
       />
@@ -226,6 +265,7 @@ const CommunitySection = () => {
 
       {/* ── Main content grid ── */}
       <div
+        className="community-main-grid"
         style={{
           position: 'relative',
           zIndex: 10,
@@ -241,10 +281,11 @@ const CommunitySection = () => {
         }}
       >
         {/* LEFT: spacer — character is absolute bg */}
-        <div />
+        <div className="community-spacer" />
 
         {/* RIGHT: text + cards */}
         <motion.div
+          className="community-text-wrapper"
           initial={{ opacity: 0, x: 60 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -284,9 +325,10 @@ const CommunitySection = () => {
               animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
               style={{
-                fontFamily: "'Sail', cursive",
+                fontFamily: "var(--font-baloo)",
                 fontSize: 'clamp(46px, 5.5vw, 80px)',
-                background: 'linear-gradient(135deg, #9719fd, #c77dff, #ff6a00, #9719fd)',
+                fontWeight: 800,
+                background: 'linear-gradient(135deg, #7C3AED, #9719fd, #ff6a00, #7C3AED)',
                 backgroundSize: '300% 300%',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',

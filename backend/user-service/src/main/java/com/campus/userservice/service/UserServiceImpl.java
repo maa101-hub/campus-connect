@@ -1,222 +1,210 @@
 package com.campus.userservice.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.campus.userservice.dto.ChangePasswordRequest;
-import com.campus.userservice.dto.LoginRequest;
-import com.campus.userservice.dto.LoginResponse;
-import com.campus.userservice.dto.ResetPasswordRequest;
-import com.campus.userservice.dto.SignUpRequest;
-import com.campus.userservice.dto.UpdateProfileRequest;
-import com.campus.userservice.dto.UserResponse;
-import com.campus.userservice.entity.Role;
-import com.campus.userservice.entity.User;
-import com.campus.userservice.entity.VerificationStatus;
+import com.campus.userservice.dto.*;
+import com.campus.userservice.entity.*;
 import com.campus.userservice.exception.BadRequestException;
 import com.campus.userservice.exception.DuplicateResourceException;
 import com.campus.userservice.repository.UserRepository;
+import com.campus.userservice.repository.MessageRepository;
 import com.campus.userservice.security.JwtUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private  BCryptPasswordEncoder passwordEncoder;
-    @Autowired private OtpService otpService;
-    @Autowired private JwtUtil jwtUtil;
-    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
-    @Override
-    public User registerUser(SignUpRequest request) {
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private BCryptPasswordEncoder passwordEncoder;
+	@Autowired
+	private OtpService otpService;
+	@Autowired
+	private JwtUtil jwtUtil;
+	@Autowired
+	private MessageRepository messageRepository;
 
-        // 🔹 Validation
-    	log.info("Registering user with email: {}", request.getEmail());
-        if (userRepository.existsByEmail(request.getEmail())) {
-        	log.error("❌ Email already exists: {}", request.getEmail());
-            throw new DuplicateResourceException("Email already exists");
-        }
+	private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-        	log.error("❌ Username already exists: {}", request.getUsername());
-            throw new DuplicateResourceException("Username already exists");
-        }
+	@Override
+	public User registerUser(SignUpRequest request) {
+		log.info("Registering user with email: {}", request.getEmail());
+		if (userRepository.existsByEmail(request.getEmail())) {
+			throw new DuplicateResourceException("Email already exists");
+		}
+		if (userRepository.existsByUsername(request.getUsername())) {
+			throw new DuplicateResourceException("Username already exists");
+		}
 
-        // 🔹 Create User Object (manual mapping - controlled)
-        User user = new User();
+		User user = new User();
+		user.setName(request.getName());
+		user.setEmail(request.getEmail());
+		user.setUsername(request.getUsername());
+		user.setPassword(passwordEncoder.encode(request.getPassword()));
+		user.setCollegeId(request.getCollegeId());
+		user.setCollegeName(request.getCollegeName());
+		user.setVerificationStatus(VerificationStatus.PENDING);
+		user.setEmailVerified(false);
+		user.setRole(Role.USER);
+		user.setCreatedAt(LocalDateTime.now());
+		user.setUpdatedAt(LocalDateTime.now());
 
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+		User savedUser = userRepository.save(user);
+		otpService.sendOtp(user.getEmail());
+		return savedUser;
+	}
 
-        user.setCollegeId(request.getCollegeId());
-        user.setCollegeName(request.getCollegeName());
+	@Override
+	public LoginResponse loginUser(LoginRequest request) {
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
-        user.setVerificationStatus(VerificationStatus.PENDING);
-        user.setEmailVerified(false);
-        user.setRole(Role.USER);
+		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+			throw new BadRequestException("Invalid email or password");
+		}
+		if (!user.isEmailVerified()) {
+			throw new BadRequestException("Email not verified");
+		}
 
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        log.info("💾 Saving user to database for email: {}", request.getEmail());
-        User savedUser = userRepository.save(user);
-        log.info("🎉 User registration completed for email: {}", request.getEmail());
-        return savedUser;
-    }
-    
-    @Override
-    public LoginResponse loginUser(LoginRequest request) {
-
-        log.info("🔐 Login attempt for email: {}", request.getEmail());
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
-        log.info("👤 User found for email: {}", request.getEmail());
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-        	log.error("❌ Invalid password for email: {}", request.getEmail());
-            throw new BadRequestException("Invalid email or password");
-        }
-
-        if (!user.isEmailVerified()) {
-        	log.error("❌ Email not verified for email: {}", request.getEmail());
-            throw new BadRequestException("Email not verified");
-        }
-
-        log.info("🔑 Generating JWT for email: {}", request.getEmail());
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        log.info("✅ JWT generated for email: {}", user.getEmail());
-        log.info("🎉 Login successful for email: {}", user.getEmail());
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        log.info("🔐 Login process completed for email: {}", request.getEmail());
-        return response;
-    }
+		String token = jwtUtil.generateToken(user.getEmail());
+		LoginResponse response = new LoginResponse();
+		response.setToken(token);
+		return response;
+	}
 
 	@Override
 	public UserResponse getCurrentUser(String email) {
-		log.info("Fetching current user details for email: {}", email);
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new BadRequestException("User not found"));
-
-		log.info("👤 User found for email: {}", email);
-		UserResponse response = new UserResponse();
-		response.setId(user.getId());
-		response.setName(user.getName());
-		response.setEmail(user.getEmail());
-		response.setUsername(user.getUsername());
-		response.setCollegeName(user.getCollegeName());
-		response.setEmailVerified(user.isEmailVerified());
-
-		log.info("✅ User details fetched successfully for email: {}", email);
-		return response;
+		return mapToResponse(user);
 	}
+
 	@Override
 	public UserResponse updateProfile(String email, UpdateProfileRequest request) {
-		log.info("Updating profile for email: {}", email);
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new BadRequestException("User not found"));
-
-		log.info("👤 User found for email: {}", email);
 		user.setName(request.getName());
 		user.setUsername(request.getUsername());
+		user.setBio(request.getBio());
+		user.setMajor(request.getMajor());
+		user.setYearOfStudy(request.getYearOfStudy());
+		user.setSkills(request.getSkills());
+		user.setInterests(request.getInterests());
 		user.setUpdatedAt(LocalDateTime.now());
+		return mapToResponse(userRepository.save(user));
+	}
 
-		log.info("💾 Saving updated user to database for email: {}", email);
-		User updatedUser = userRepository.save(user);
+	@Override
+	public void changePassword(String email, ChangePasswordRequest request) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+			throw new BadRequestException("Old password does not match");
+		}
+		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+		userRepository.save(user);
+	}
 
-		log.info("✅ Profile updated successfully for email: {}", email);
-		UserResponse response = new UserResponse();
-		response.setId(updatedUser.getId());
-		response.setName(updatedUser.getName());
-		response.setEmail(updatedUser.getEmail());
-		response.setUsername(updatedUser.getUsername());
-		response.setCollegeName(updatedUser.getCollegeName());
-		response.setEmailVerified(updatedUser.isEmailVerified());
+	@Override
+	public void forgotPassword(String email) {
+		if (!userRepository.existsByEmail(email)) {
+			throw new BadRequestException("User not found");
+		}
+		otpService.sendOtp(email);
+	}
 
-		log.info("🎉 Profile update process completed for email: {}", email);
+	@Override
+	public void resetPassword(ResetPasswordRequest request) {
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		otpService.verifyOtp(request.getEmail(), request.getOtp());
+		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+		userRepository.save(user);
+	}
+
+	@Override
+	public List<UserResponse> getCollegeUsers(String collegeName) {
+		return userRepository.findByCollegeName(collegeName).stream()
+				.filter(User::isEmailVerified)
+				.map(this::mapToResponse)
+				.collect(Collectors.toList());
+	}
+
+	@Autowired
+	private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+	@Override
+	public MessageResponse sendMessage(String senderEmail, SendMessageRequest request) {
+		User sender = userRepository.findByEmail(senderEmail)
+				.orElseThrow(() -> new BadRequestException("Sender not found"));
+		
+		Message message = Message.builder()
+				.senderId(sender.getId())
+				.recipientId(request.getRecipientId())
+				.content(request.getContent())
+				.build();
+		
+		Message saved = messageRepository.save(message);
+		MessageResponse response = mapToMessageResponse(saved);
+		
+		// Broadcast to recipient over WebSocket
+		messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), response);
+		
 		return response;
 	}
 
 	@Override
-	public void changePassword(String email,
-	                           ChangePasswordRequest request) {
-
-	    log.info("🔐 Password change request for email: {}", email);
-
-	    User user = userRepository.findByEmail(email)
-	            .orElseThrow(() -> {
-	                log.warn("⚠️ User not found for email: {}", email);
-	                return new BadRequestException("User not found");
-	            });
-
-	    if (!passwordEncoder.matches(
-	            request.getOldPassword(),
-	            user.getPassword())) {
-
-	        log.warn("❌ Incorrect old password attempt for email: {}", email);
-
-	        throw new BadRequestException(
-	                "Old password is incorrect");
-	    }
-
-	    if (passwordEncoder.matches(
-	            request.getNewPassword(),
-	            user.getPassword())) {
-
-	        log.warn("⚠️ New password same as old password for email: {}", email);
-
-	        throw new BadRequestException(
-	                "New password cannot be same as old password");
-	    }
-
-	    user.setPassword(
-	            passwordEncoder.encode(
-	                    request.getNewPassword()));
-
-	    userRepository.save(user);
-
-	    log.info("✅ Password changed successfully for email: {}", email);
+	public List<MessageResponse> getConversation(String email, Long otherUserId) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		
+		return messageRepository.findConversation(user.getId(), otherUserId).stream()
+				.map(this::mapToMessageResponse)
+				.collect(Collectors.toList());
 	}
+
 	@Override
-	public void forgotPassword(String email) {
-
-	    log.info("Forgot password request for {}", email);
-
-	    User user = userRepository.findByEmail(email)
-	        .orElseThrow(() ->
-	            new BadRequestException("User not found"));
-
-	    otpService.sendOtp(email);
-
-	    log.info("OTP sent for forgot password {}", email);
+	public List<UserResponse> getContacts(String email) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		
+		List<Long> contactIds = messageRepository.findContactIds(user.getId());
+		return userRepository.findAllById(contactIds).stream()
+				.map(this::mapToResponse)
+				.collect(Collectors.toList());
 	}
-	@Override
-	public void resetPassword(ResetPasswordRequest request) {
 
-	    log.info("Reset password request for {}", request.getEmail());
+	private UserResponse mapToResponse(User user) {
+		UserResponse r = new UserResponse();
+		r.setId(user.getId());
+		r.setName(user.getName());
+		r.setEmail(user.getEmail());
+		r.setUsername(user.getUsername());
+		r.setCollegeName(user.getCollegeName());
+		r.setEmailVerified(user.isEmailVerified());
+		r.setBio(user.getBio());
+		r.setMajor(user.getMajor());
+		r.setYearOfStudy(user.getYearOfStudy());
+		r.setSkills(user.getSkills());
+		r.setInterests(user.getInterests());
+		return r;
+	}
 
-	    User user = userRepository.findByEmail(request.getEmail())
-	        .orElseThrow(() ->
-	            new BadRequestException("User not found"));
-
-	    otpService.verifyOtp(
-	        request.getEmail(),
-	        request.getOtp());
-
-	    user.setPassword(
-	        passwordEncoder.encode(
-	            request.getNewPassword()));
-
-	    userRepository.save(user);
-
-	    log.info("Password reset successful for {}", request.getEmail());
+	private MessageResponse mapToMessageResponse(Message m) {
+		MessageResponse r = new MessageResponse();
+		r.setId(m.getId());
+		r.setSenderId(m.getSenderId());
+		r.setRecipientId(m.getRecipientId());
+		r.setContent(m.getContent());
+		r.setTimestamp(m.getTimestamp());
+		return r;
 	}
 }

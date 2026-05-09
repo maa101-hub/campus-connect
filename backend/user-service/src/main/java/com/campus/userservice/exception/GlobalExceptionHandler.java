@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.campus.userservice.response.ApiResponse;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -16,64 +18,50 @@ public class GlobalExceptionHandler {
     // 🔴 Validation Errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    
-    public Map<String, Object> handleValidationException(MethodArgumentNotValidException ex) {
-    	log.error("🔥 Exception occurred: {}", ex.getMessage(), ex);
+    public ApiResponse<?> handleValidationException(MethodArgumentNotValidException ex) {
+    	log.error("🔥 Validation Exception: {}", ex.getMessage());
         Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult().getFieldErrors().forEach(error ->
             errors.put(error.getField(), error.getDefaultMessage())
         );
 
-        return Map.of(
-                "timestamp", LocalDateTime.now(),
-                "status", 400,
-                "errors", errors
-        );
+        return ApiResponse.error(400, "Validation failed", errors);
     }
 
     // 🔴 Duplicate Resource
     @ExceptionHandler(DuplicateResourceException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public Map<String, Object> handleDuplicate(DuplicateResourceException ex) {
-        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    public ApiResponse<?> handleDuplicate(DuplicateResourceException ex) {
+        return ApiResponse.error(409, ex.getMessage(), null);
     }
 
     // 🔴 Bad Request
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleBadRequest(BadRequestException ex) {
-        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    public ApiResponse<?> handleBadRequest(BadRequestException ex) {
+        return ApiResponse.error(400, ex.getMessage(), null);
     }
 
     // 🔴 Not Found
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, Object> handleNotFound(ResourceNotFoundException ex) {
-        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    public ApiResponse<?> handleNotFound(ResourceNotFoundException ex) {
+        return ApiResponse.error(404, ex.getMessage(), null);
     }
 
     // 🔴 Unauthorized
     @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public Map<String, Object> handleUnauthorized(UnauthorizedException ex) {
-        return buildResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    public ApiResponse<?> handleUnauthorized(UnauthorizedException ex) {
+        return ApiResponse.error(401, ex.getMessage(), null);
     }
 
     // 🔴 Generic Exception (Fallback)
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, Object> handleGeneric(Exception ex) {
-        return buildResponse("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    // 🔧 Common Response Builder
-    private Map<String, Object> buildResponse(String message, HttpStatus status) {
-        return Map.of(
-                "timestamp", LocalDateTime.now(),
-                "status", status.value(),
-                "error", status.getReasonPhrase(),
-                "message", message
-        );
+    public ApiResponse<?> handleGeneric(Exception ex) {
+        log.error("🔥 Unexpected error: ", ex);
+        return ApiResponse.error(500, "Something went wrong", null);
     }
 }

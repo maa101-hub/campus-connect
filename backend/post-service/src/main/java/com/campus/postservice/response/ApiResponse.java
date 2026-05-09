@@ -6,6 +6,7 @@ public class ApiResponse<T> {
 
     private LocalDateTime timestamp;
     private int status;
+    private boolean success;
     private String message;
     private T data;
     private Object errors;
@@ -13,9 +14,10 @@ public class ApiResponse<T> {
     // 🔹 Constructors
     public ApiResponse() {}
 
-    public ApiResponse(LocalDateTime timestamp, int status, String message, T data, Object errors) {
+    public ApiResponse(LocalDateTime timestamp, int status, boolean success, String message, T data, Object errors) {
         this.timestamp = timestamp;
         this.status = status;
+        this.success = success;
         this.message = message;
         this.data = data;
         this.errors = errors;
@@ -26,6 +28,7 @@ public class ApiResponse<T> {
         return new ApiResponse<>(
                 LocalDateTime.now(),
                 200,
+                true,
                 message,
                 data,
                 null
@@ -37,11 +40,15 @@ public class ApiResponse<T> {
         return new ApiResponse<>(
                 LocalDateTime.now(),
                 status,
+                false,
                 message,
                 null,
                 errors
         );
     }
+
+    public boolean isSuccess() { return success; }
+    public void setSuccess(boolean success) { this.success = success; }
 
     // 🔹 Getters & Setters
     public LocalDateTime getTimestamp() {

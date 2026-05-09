@@ -28,7 +28,7 @@ const Navbar = ({ onOpenSignup }) => {
     const observers = [];
     const observerOptions = {
       root: null,
-      rootMargin: '-50% 0px -50% 0px', // Trigger when section is in the middle of viewport
+      rootMargin: '-15% 0px -70% 0px',
       threshold: 0
     };
 
@@ -85,13 +85,19 @@ const Navbar = ({ onOpenSignup }) => {
       />
 
       <div
-        className="mx-auto px-6 lg:px-12 transition-all duration-300"
+        className="mx-auto transition-all duration-500 ease-in-out"
         style={{
+          width: scrolled ? '92%' : '100%',
+          maxWidth: scrolled ? '1200px' : '100%',
+          marginTop: scrolled ? '12px' : '0',
+          borderRadius: scrolled ? '24px' : '0',
+          padding: '0 24px',
           background: scrolled
-            ? 'rgba(0,0,0,0.75)'
-            : 'rgba(0,0,0,0.2)',
-          backdropFilter: scrolled ? 'blur(20px)' : 'blur(8px)',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : 'none',
+            ? 'rgba(10, 0, 16, 0.7)'
+            : 'rgba(0, 0, 0, 0.2)',
+          backdropFilter: scrolled ? 'blur(24px)' : 'blur(8px)',
+          border: scrolled ? '1px solid rgba(157, 78, 221, 0.2)' : '1px solid transparent',
+          boxShadow: scrolled ? '0 12px 40px rgba(0, 0, 0, 0.5)' : 'none',
         }}
       >
         <div className="flex items-center justify-between h-[80px] max-w-[1440px] mx-auto">
@@ -100,14 +106,14 @@ const Navbar = ({ onOpenSignup }) => {
           <a
             href="#hero"
             id="nav-logo"
-            className="flex-shrink-0"
+            className="flex-shrink-0 cursor-pointer"
             aria-label="CampusConnect home"
-            style={{ fontFamily: "'Manrope', sans-serif", fontSize: '28px', fontWeight: 700, textDecoration: 'none', lineHeight: 1 }}
+            style={{ fontFamily: "var(--font-baloo)", fontSize: '32px', fontWeight: 800, textDecoration: 'none', lineHeight: 1 }}
           >
-            <span style={{ color: '#9d4edd' }}>C</span>
-            <span style={{ color: '#ffffff', fontWeight: 600 }}>ampus</span>
-            <span style={{ color: '#9d4edd' }}>C</span>
-            <span style={{ color: '#ffffff', fontWeight: 600 }}>onnect</span>
+            <span style={{ color: '#7C3AED' }}>C</span>
+            <span style={{ color: '#ffffff' }}>ampus</span>
+            <span style={{ color: '#7C3AED' }}>C</span>
+            <span style={{ color: '#ffffff' }}>onnect</span>
           </a>
 
           {/* ── Desktop nav links ── */}
@@ -126,12 +132,13 @@ const Navbar = ({ onOpenSignup }) => {
                 whileHover={{ y: -2 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 style={{
-                  fontFamily: "'Manrope', sans-serif",
+                  fontFamily: "var(--font-manrope)",
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '17px',
-                  color: isActive ? '#9d4edd' : 'rgba(255,255,255,0.6)',
+                  color: isActive ? '#7C3AED' : 'rgba(255,255,255,0.6)',
                   textDecoration: 'none',
                   position: 'relative',
+                  cursor: 'pointer',
                 }}
               >
                 {item.label}

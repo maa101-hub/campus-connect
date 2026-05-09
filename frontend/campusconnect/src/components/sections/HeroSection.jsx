@@ -34,9 +34,18 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 
 // ─── Stat badges ─────────────────────────────────────────────────────────────
 const statBadges = [
-  { icon: '🎓', label: '50k+ Students' },
-  { icon: '🏫', label: '200+ Colleges'  },
-  { icon: '💬', label: '1M+ Messages'   },
+  { 
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>, 
+    label: '50k+ Students' 
+  },
+  { 
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7M4 21V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v17"/></svg>, 
+    label: '200+ Colleges'  
+  },
+  { 
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>, 
+    label: '1M+ Messages'   
+  },
 ];
 
 const HeroSection = ({ onOpenSignup }) => {
@@ -76,6 +85,26 @@ const HeroSection = ({ onOpenSignup }) => {
         alignItems: 'center',
       }}
     >
+      <style>{`
+        @media (max-width: 991px) {
+          .hero-main-grid { 
+            grid-template-columns: 1fr !important;
+            text-align: center !important;
+          }
+          .hero-cta-wrapper {
+            justify-content: center !important;
+          }
+          .hero-girl-img {
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            opacity: 0.15 !important;
+            z-index: 1 !important;
+            object-fit: cover !important;
+          }
+        }
+      `}</style>
+
       {/* ── Mouse-following spotlight glow ── */}
       <div
         aria-hidden="true"
@@ -186,11 +215,22 @@ const HeroSection = ({ onOpenSignup }) => {
       {/* ── Girl image — fade in + mouse parallax ── */}
       <motion.img
         src={heroImage}
+        className="hero-girl-img"
         alt=""
         aria-hidden="true"
         initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 0.9, x: 0 }}
-        transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+        animate={{ 
+          opacity: 0.9, 
+          x: 0,
+          rotateX,
+          rotateY,
+        }}
+        transition={{ 
+          duration: 1.1, 
+          ease: [0.25, 0.46, 0.45, 0.94],
+          rotateX: { type: 'spring', damping: 25, stiffness: 120 },
+          rotateY: { type: 'spring', damping: 25, stiffness: 120 },
+        }}
         style={{
           position: 'absolute',
           top: 0,
@@ -203,8 +243,6 @@ const HeroSection = ({ onOpenSignup }) => {
           pointerEvents: 'none',
           maskImage: 'linear-gradient(to left, rgba(0,0,0,0.8) 30%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.8) 30%, transparent 100%)',
-          rotateX,
-          rotateY,
           transformStyle: 'preserve-3d',
           filter: 'drop-shadow(0 0 40px rgba(151,25,253,0.2))',
         }}
@@ -212,6 +250,7 @@ const HeroSection = ({ onOpenSignup }) => {
 
       {/* ── Main layout grid ── */}
       <div
+        className="hero-main-grid"
         style={{
           position: 'relative',
           zIndex: 10,
@@ -287,9 +326,10 @@ const HeroSection = ({ onOpenSignup }) => {
                 animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                 style={{
-                  fontFamily: "'Sail', cursive",
+                  fontFamily: "var(--font-baloo)",
                   fontSize: 'clamp(52px, 6.5vw, 84px)',
-                  background: 'linear-gradient(135deg, #9719fd, #c77dff, #ff6a00, #9719fd)',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #7C3AED, #9719fd, #ff6a00, #7C3AED)',
                   backgroundSize: '300% 300%',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -301,13 +341,14 @@ const HeroSection = ({ onOpenSignup }) => {
               Network,
             </span>
             <span style={{
-              fontFamily: "'Sail', cursive",
+              fontFamily: "var(--font-baloo)",
               fontSize: 'clamp(52px, 6.5vw, 84px)',
+              fontWeight: 800,
               display: 'block',
               marginTop: '4px',
             }}>
               <span style={{
-                background: 'linear-gradient(135deg, #9d4edd 0%, #9719fd 60%, #c77dff 100%)',
+                background: 'linear-gradient(135deg, #7C3AED 0%, #9719fd 60%, #c77dff 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',

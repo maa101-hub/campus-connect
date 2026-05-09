@@ -34,7 +34,8 @@ public class SecurityConfig {
         	        "/api/auth/verify-otp",
         	        "/api/auth/forgot-password",
         	        "/api/auth/reset-password",
-        	        "/actuator/**"
+        	        "/actuator/**",
+        	        "/ws/**"
         	    ).permitAll()
         	    .anyRequest().authenticated()
         	);
