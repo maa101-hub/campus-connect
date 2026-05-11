@@ -6,9 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
-@Getter
-@Setter
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message {
@@ -28,8 +26,21 @@ public class Message {
 
     private LocalDateTime timestamp;
 
+    @Column(name = "is_read")
+    private Boolean read = false;
+
+    public Message(Long senderId, Long recipientId, String content) {
+        this.senderId = senderId;
+        this.recipientId = recipientId;
+        this.content = content;
+        this.timestamp = LocalDateTime.now();
+        this.read = false;
+    }
+
     @PrePersist
     protected void onCreate() {
-        this.timestamp = LocalDateTime.now();
+        if (this.timestamp == null) {
+            this.timestamp = LocalDateTime.now();
+        }
     }
 }

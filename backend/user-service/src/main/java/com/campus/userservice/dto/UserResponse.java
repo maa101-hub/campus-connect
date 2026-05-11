@@ -24,4 +24,9 @@ public class UserResponse {
     private String yearOfStudy;
     private String skills;
     private String interests;
+
+    // Social info
+    private long followerCount;
+    private long followingCount;
+    private boolean isFollowing;
 }

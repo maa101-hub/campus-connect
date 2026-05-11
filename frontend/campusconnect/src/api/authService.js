@@ -13,10 +13,7 @@ const authService = {
   login: async (credentials) => {
     try {
       const response = await api.post('/api/auth/login', credentials);
-      // Save token if successful
-      if (response.data.success && response.data.data.token) {
-        localStorage.setItem('token', response.data.data.token);
-      }
+      // Token storage is handled by authStore — don't duplicate it here
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

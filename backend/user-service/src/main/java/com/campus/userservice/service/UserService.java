@@ -25,4 +25,11 @@ public interface UserService {
     MessageResponse sendMessage(String senderEmail, SendMessageRequest request);
     List<MessageResponse> getConversation(String email, Long otherUserId);
     List<UserResponse> getContacts(String email);
+    void markConversationAsRead(String email, Long senderId);
+
+    // Follow system
+    void followUser(String followerEmail, Long targetUserId);
+    void unfollowUser(String followerEmail, Long targetUserId);
+    List<UserResponse> getFollowers(Long userId);
+    List<UserResponse> getFollowing(Long userId);
 }

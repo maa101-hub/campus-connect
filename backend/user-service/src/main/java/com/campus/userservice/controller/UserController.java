@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,9 +38,13 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            log.error("❌ Authentication failed: Authentication object or name is null");
+            return ApiResponse.error(401, "User not authenticated", null);
+        }
+        
         log.info("Fetching current user profile for email: {}", authentication.getName());
         String email = authentication.getName();
-        log.info("Authenticated email: {}", email);
         UserResponse response = userService.getCurrentUser(email);
         log.info("User profile fetched successfully for email: {}", email);
         return ApiResponse.success(response, "User profile fetched successfully");
@@ -74,5 +80,35 @@ public class UserController {
         log.info("Fetching users for college: {}", collegeName);
         List<UserResponse> users = userService.getCollegeUsers(collegeName);
         return ApiResponse.success(users, "College users fetched successfully");
+    }
+
+    @PostMapping("/follow/{targetUserId}")
+    public ApiResponse<?> followUser(
+            Authentication authentication,
+            @PathVariable Long targetUserId) {
+        log.info("User {} is following user {}", authentication.getName(), targetUserId);
+        userService.followUser(authentication.getName(), targetUserId);
+        return ApiResponse.success(null, "User followed successfully");
+    }
+
+    @DeleteMapping("/follow/{targetUserId}")
+    public ApiResponse<?> unfollowUser(
+            Authentication authentication,
+            @PathVariable Long targetUserId) {
+        log.info("User {} is unfollowing user {}", authentication.getName(), targetUserId);
+        userService.unfollowUser(authentication.getName(), targetUserId);
+        return ApiResponse.success(null, "User unfollowed successfully");
+    }
+
+    @GetMapping("/{userId}/followers")
+    public ApiResponse<List<UserResponse>> getFollowers(@PathVariable Long userId) {
+        List<UserResponse> followers = userService.getFollowers(userId);
+        return ApiResponse.success(followers, "Followers fetched successfully");
+    }
+
+    @GetMapping("/{userId}/following")
+    public ApiResponse<List<UserResponse>> getFollowing(@PathVariable Long userId) {
+        List<UserResponse> following = userService.getFollowing(userId);
+        return ApiResponse.success(following, "Following fetched successfully");
     }
 }

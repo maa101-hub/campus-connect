@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import girl3Img from '../../assets/image3.png';
 import authService from '../../api/authService';
 import useAuthStore from '../../store/authStore';
+import toast from 'react-hot-toast';
 
 // ─── Floating left decorations ────────────────────────────────────────────────
 const floatingBadges = [
@@ -244,13 +245,16 @@ const SignupSection = ({ onClose }) => {
         };
         const res = await performSignup(submissionData);
         if (res.success) {
+          toast.success('Registration successful! Please verify OTP.');
           setStep(3); // Go to OTP step
         } else {
+          toast.error(res.message || 'Signup failed');
           setErrors({ general: res.message || 'Signup failed' });
         }
       } else {
         const res = await performLogin(login);
         if (res.success) {
+          toast.success('Logged in successfully!');
           setSuccess(true);
           setTimeout(() => { 
             setSuccess(false); 
@@ -258,10 +262,12 @@ const SignupSection = ({ onClose }) => {
             navigate('/dashboard'); 
           }, 1500);
         } else {
+          toast.error(res.message || 'Login failed');
           setErrors({ general: res.message || 'Login failed' });
         }
       }
     } catch (err) {
+      toast.error('Connection failed. Please try again.');
       setErrors({ general: 'Connection failed' });
     }
   };
@@ -274,6 +280,7 @@ const SignupSection = ({ onClose }) => {
     try {
       const res = await performVerify(signup.email, otp);
       if (res.success) {
+        toast.success('Email verified successfully!');
         setSuccess(true);
         setTimeout(() => { 
           setSuccess(false); 
@@ -283,6 +290,7 @@ const SignupSection = ({ onClose }) => {
           setOtp('');
         }, 1500);
       } else {
+        toast.error(res.message || 'Invalid OTP');
         setErrors({ general: res.message || 'Invalid OTP' });
       }
     } catch (err) {

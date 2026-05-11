@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<?> handleGeneric(Exception ex) {
-        log.error("🔥 Unexpected error: ", ex);
-        return ApiResponse.error(500, "Something went wrong", null);
+        log.error("🔥 Unexpected error: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return ApiResponse.error(500, "Internal Server Error: " + ex.getMessage(), null);
     }
 }

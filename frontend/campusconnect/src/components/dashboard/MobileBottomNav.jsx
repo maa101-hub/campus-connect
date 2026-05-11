@@ -1,10 +1,10 @@
-import { Home, Compass, PlusSquare, Bell, UserCircle } from 'lucide-react';
+import { Home, Building2, MessageSquare, Bell, UserCircle } from 'lucide-react';
 
 const items = [
   { id: 'home', icon: Home, label: 'Home' },
-  { id: 'explore', icon: Compass, label: 'Explore' },
-  { id: 'create', icon: PlusSquare, label: 'Post' },
-  { id: 'notifications', icon: Bell, label: 'Alerts' },
+  { id: 'college', icon: Building2, label: 'College' },
+  { id: 'messages', icon: MessageSquare, label: 'Chat' },
+  { id: 'collab', icon: Bell, label: 'Collab' },
   { id: 'profile', icon: UserCircle, label: 'Profile' },
 ];
 

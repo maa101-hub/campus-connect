@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Search, Phone, Video, MoreVertical, Paperclip, Smile } from 'lucide-react';
+import { Send, User, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare, Check, CheckCheck } from 'lucide-react';
 import messageService from '../../api/messageService';
+import useNotificationStore from '../../store/notificationStore';
 
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-
-const MessagingSection = ({ user, initialRecipient = null }) => {
+const MessagingSection = ({ user, initialRecipient = null, sendTyping }) => {
   const [contacts, setContacts] = useState([]);
   const [activeChat, setActiveChat] = useState(initialRecipient);
   const [messages, setMessages] = useState([]);
@@ -14,8 +12,18 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef(null);
-  const stompClientRef = useRef(null);
   const activeChatRef = useRef(activeChat);
+  const typingTimeoutRef = useRef(null);
+
+  const { incomingMessage, clearIncomingMessage, markMessagesAsRead, typingStatus, readReceiptTrigger } = useNotificationStore();
+
+  const isOtherTyping = activeChat && typingStatus[activeChat.id];
+
+  useEffect(() => {
+    if (readReceiptTrigger && activeChat && readReceiptTrigger.readerId === activeChat.id) {
+      setMessages(prev => prev.map(m => m.senderId === user.id ? { ...m, read: true } : m));
+    }
+  }, [readReceiptTrigger, activeChat, user.id]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -27,46 +35,39 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
 
   useEffect(() => {
     fetchContacts();
+    // Mark messages as read when we open the section
+    markMessagesAsRead();
+  }, [markMessagesAsRead]);
 
-    // Setup WebSocket Connection
-    const token = localStorage.getItem('token');
-    const socket = new SockJS(`http://localhost:8095/ws?token=${token}`);
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      debug: (str) => { console.log(str); },
-      reconnectDelay: 5000,
-      onConnect: () => {
-        console.log('Connected to WebSocket');
-        stompClient.subscribe(`/topic/messages/${user.id}`, (msg) => {
-          if (msg.body) {
-            const incomingMessage = JSON.parse(msg.body);
-            console.log('Received message:', incomingMessage);
-            
-            // Only add to messages if we are chatting with the sender
-            if (activeChatRef.current && activeChatRef.current.id === incomingMessage.senderId) {
-              setMessages((prevMessages) => [...prevMessages, incomingMessage]);
-            } else {
-              // Optionally trigger a notification sound or badge here
-              console.log("New message from someone else!");
-            }
-          }
-        });
-      },
-    });
-
-    stompClient.activate();
-    stompClientRef.current = stompClient;
-
-    return () => {
-      stompClient.deactivate();
-    };
-  }, [user.id]);
+  // Listen to global incoming messages
+  useEffect(() => {
+    if (incomingMessage) {
+      if (activeChatRef.current && activeChatRef.current.id === incomingMessage.senderId) {
+        setMessages((prev) => [...prev, incomingMessage]);
+        handleMarkAsRead(incomingMessage.senderId); // Mark as read immediately if chat is open
+      } else {
+        // If message is from someone else, refresh contacts to show them (or move to top)
+        fetchContacts();
+      }
+      clearIncomingMessage();
+    }
+  }, [incomingMessage, clearIncomingMessage]);
 
   useEffect(() => {
     if (activeChat) {
       fetchConversation(activeChat.id);
+      handleMarkAsRead(activeChat.id);
     }
   }, [activeChat]);
+
+  const handleMarkAsRead = async (senderId) => {
+    try {
+      await messageService.markAsRead(senderId);
+      markMessagesAsRead(); // Update local global count
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+    }
+  };
 
   useEffect(scrollToBottom, [messages]);
 
@@ -107,6 +108,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     setNewMessage('');
 
     try {
+      sendTyping(activeChat.id, false); // Stop typing on send
       const res = await messageService.sendMessage({
         recipientId: activeChat.id,
         content: content
@@ -120,6 +122,20 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (activeChat && sendTyping) {
+      sendTyping(activeChat.id, true);
+      
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTyping(activeChat.id, false);
+      }, 3000);
     }
   };
 
@@ -205,7 +221,18 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                 </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{activeChat.name}</h4>
-                  <p style={{ margin: 0, fontSize: 11, color: '#22C55E' }}>Online</p>
+                  <div style={{ display: 'flex', alignItems: 'center', height: 16 }}>
+                    {isOtherTyping ? (
+                      <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginRight: 2 }}>typing</span>
+                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent)' }} />
+                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent)' }} />
+                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent)' }} />
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: 11, color: '#22C55E', fontWeight: 600 }}>Online</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)' }}>
@@ -238,9 +265,12 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                         {m.content}
                         <div style={{ 
                           fontSize: 10, marginTop: 4, textAlign: 'right',
-                          opacity: 0.7 
+                          opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4
                         }}>
                           {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {isMe && (
+                            m.read ? <CheckCheck size={12} style={{ color: '#fff' }} /> : <Check size={12} style={{ color: '#fff' }} />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -260,7 +290,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
               <div style={{ flex: 1, position: 'relative' }}>
                 <input 
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleInputChange}
                   placeholder="Type a message..."
                   style={{ 
                     width: '100%', padding: '12px 16px', borderRadius: 12,

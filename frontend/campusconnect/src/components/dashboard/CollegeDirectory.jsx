@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, UserPlus, MessageSquare, MapPin } from 'lucide-react';
 import userService from '../../api/userService';
 
-const CollegeDirectory = ({ user, onMessageUser }) => {
+const CollegeDirectory = ({ user, onMessageUser, onViewProfile }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -15,6 +15,7 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
   }, [user]);
 
   const fetchCollegeUsers = async () => {
+    if (!user?.collegeName) return;
     setLoading(true);
     try {
       const res = await userService.getCollegeUsers(user.collegeName);
@@ -26,6 +27,21 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
       console.error('Failed to fetch college users:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollow = async (targetUser) => {
+    try {
+      const res = await userService.followUser(targetUser.id);
+      if (res.success) {
+        import('react-hot-toast').then(m => m.default.success(`You are now following ${targetUser.name}`));
+        // Update local state instantly
+        setUsers(prev => prev.map(u => 
+          u.id === targetUser.id ? { ...u, isFollowing: true } : u
+        ));
+      }
+    } catch (err) {
+      import('react-hot-toast').then(m => m.default.error(err.message || 'Failed to follow user'));
     }
   };
 
@@ -74,9 +90,17 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
               transition={{ delay: i * 0.05 }}
               style={{ padding: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div 
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                  padding: '4px', borderRadius: 12, transition: '0.2s'
+                }}
+                onClick={() => onViewProfile(u)}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
                 <div style={{ 
-                  width: 50, height: 50, borderRadius: 16, 
+                  width: 50, height: 50, borderRadius: '50%', 
                   background: 'var(--bg-accent)', color: '#fff', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 18, fontWeight: 800
@@ -96,16 +120,20 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
 
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleFollow(u)}
+                  disabled={u.isFollowing}
+                  whileHover={{ scale: u.isFollowing ? 1 : 1.02 }}
+                  whileTap={{ scale: u.isFollowing ? 1 : 0.98 }}
                   style={{ 
                     flex: 1, padding: '8px 0', borderRadius: 10, 
-                    background: 'var(--accent-light)', color: 'var(--accent)',
-                    border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    background: u.isFollowing ? 'var(--bg-tertiary)' : 'var(--accent-light)', 
+                    color: u.isFollowing ? 'var(--text-muted)' : 'var(--accent)',
+                    border: 'none', fontSize: 13, fontWeight: 600, 
+                    cursor: u.isFollowing ? 'default' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
                   }}
                 >
-                  <UserPlus size={16} /> Connect
+                  {u.isFollowing ? <><Check size={16} /> Following</> : <><UserPlus size={16} /> Connect</>}
                 </motion.button>
                 <motion.button
                   onClick={() => onMessageUser(u)}

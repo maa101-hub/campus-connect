@@ -17,6 +17,7 @@ import com.campus.userservice.exception.DuplicateResourceException;
 import com.campus.userservice.repository.UserRepository;
 import com.campus.userservice.repository.MessageRepository;
 import com.campus.userservice.security.JwtUtil;
+import com.campus.userservice.repository.FollowRepository;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -31,6 +32,8 @@ public class UserServiceImpl implements UserService {
 	private JwtUtil jwtUtil;
 	@Autowired
 	private MessageRepository messageRepository;
+	@Autowired
+	private FollowRepository followRepository;
 
 	private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -70,7 +73,7 @@ public class UserServiceImpl implements UserService {
 		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 			throw new BadRequestException("Invalid email or password");
 		}
-		if (!user.isEmailVerified()) {
+		if (!Boolean.TRUE.equals(user.getEmailVerified())) {
 			throw new BadRequestException("Email not verified");
 		}
 
@@ -133,7 +136,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public List<UserResponse> getCollegeUsers(String collegeName) {
 		return userRepository.findByCollegeName(collegeName).stream()
-				.filter(User::isEmailVerified)
+				.filter(u -> Boolean.TRUE.equals(u.getEmailVerified()))
 				.map(this::mapToResponse)
 				.collect(Collectors.toList());
 	}
@@ -145,19 +148,15 @@ public class UserServiceImpl implements UserService {
 	public MessageResponse sendMessage(String senderEmail, SendMessageRequest request) {
 		User sender = userRepository.findByEmail(senderEmail)
 				.orElseThrow(() -> new BadRequestException("Sender not found"));
-		
-		Message message = Message.builder()
-				.senderId(sender.getId())
-				.recipientId(request.getRecipientId())
-				.content(request.getContent())
-				.build();
-		
+
+		Message message = new Message(sender.getId(), request.getRecipientId(), request.getContent());
+
 		Message saved = messageRepository.save(message);
 		MessageResponse response = mapToMessageResponse(saved);
-		
+
 		// Broadcast to recipient over WebSocket
 		messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), response);
-		
+
 		return response;
 	}
 
@@ -165,20 +164,82 @@ public class UserServiceImpl implements UserService {
 	public List<MessageResponse> getConversation(String email, Long otherUserId) {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new BadRequestException("User not found"));
-		
+
 		return messageRepository.findConversation(user.getId(), otherUserId).stream()
 				.map(this::mapToMessageResponse)
 				.collect(Collectors.toList());
 	}
 
 	@Override
+	public void markConversationAsRead(String email, Long senderId) {
+		User recipient = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		messageRepository.markAsRead(senderId, recipient.getId());
+		
+		// Broadcast read receipt to the original sender
+		messagingTemplate.convertAndSend("/topic/read/" + senderId, recipient.getId());
+	}
+
+	@Override
 	public List<UserResponse> getContacts(String email) {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new BadRequestException("User not found"));
-		
+
 		List<Long> contactIds = messageRepository.findContactIds(user.getId());
 		return userRepository.findAllById(contactIds).stream()
 				.map(this::mapToResponse)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public void followUser(String followerEmail, Long targetUserId) {
+		User follower = userRepository.findByEmail(followerEmail)
+				.orElseThrow(() -> new BadRequestException("Follower not found"));
+		User following = userRepository.findById(targetUserId)
+				.orElseThrow(() -> new BadRequestException("Target user not found"));
+
+		if (follower.getId().equals(following.getId())) {
+			throw new BadRequestException("You cannot follow yourself");
+		}
+
+		if (followRepository.existsByFollowerAndFollowing(follower, following)) {
+			throw new BadRequestException("Already following this user");
+		}
+
+		Follow follow = Follow.builder()
+				.follower(follower)
+				.following(following)
+				.build();
+		followRepository.save(follow);
+	}
+
+	@Override
+	public void unfollowUser(String followerEmail, Long targetUserId) {
+		User follower = userRepository.findByEmail(followerEmail)
+				.orElseThrow(() -> new BadRequestException("Follower not found"));
+		User following = userRepository.findById(targetUserId)
+				.orElseThrow(() -> new BadRequestException("Target user not found"));
+
+		Follow follow = followRepository.findByFollowerAndFollowing(follower, following)
+				.orElseThrow(() -> new BadRequestException("Not following this user"));
+		followRepository.delete(follow);
+	}
+
+	@Override
+	public List<UserResponse> getFollowers(Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		return followRepository.findByFollowing(user).stream()
+				.map(f -> mapToResponse(f.getFollower()))
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public List<UserResponse> getFollowing(Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		return followRepository.findByFollower(user).stream()
+				.map(f -> mapToResponse(f.getFollowing()))
 				.collect(Collectors.toList());
 	}
 
@@ -189,12 +250,20 @@ public class UserServiceImpl implements UserService {
 		r.setEmail(user.getEmail());
 		r.setUsername(user.getUsername());
 		r.setCollegeName(user.getCollegeName());
-		r.setEmailVerified(user.isEmailVerified());
+		r.setEmailVerified(Boolean.TRUE.equals(user.getEmailVerified()));
 		r.setBio(user.getBio());
 		r.setMajor(user.getMajor());
 		r.setYearOfStudy(user.getYearOfStudy());
 		r.setSkills(user.getSkills());
 		r.setInterests(user.getInterests());
+
+		// Fill social metrics
+		r.setFollowerCount(followRepository.countByFollowing(user));
+		r.setFollowingCount(followRepository.countByFollower(user));
+
+		// Check if current user follows this user (if security context available)
+		// For now we set it to false, or we can handle it in a separate profile call
+
 		return r;
 	}
 
@@ -205,6 +274,7 @@ public class UserServiceImpl implements UserService {
 		r.setRecipientId(m.getRecipientId());
 		r.setContent(m.getContent());
 		r.setTimestamp(m.getTimestamp());
+		r.setRead(Boolean.TRUE.equals(m.getRead()));
 		return r;
 	}
 }

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader } from 'lucide-react';
 import postService from '../../api/postService';
+import useIntersectionObserver from '../../hooks/useIntersectionObserver';
+import toast from 'react-hot-toast';
 
 // Helper: time ago
 const timeAgo = (dateStr) => {
@@ -43,6 +45,9 @@ const PostCard = ({ post, index, user }) => {
   const [liked, setLiked] = useState(post.hasLiked || false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [likeAnimation, setLikeAnimation] = useState(false);
+  
+  const isAnonymous = post.username === "Anonymous Ghost";
   
   // Comments state
   const [showComments, setShowComments] = useState(false);
@@ -51,7 +56,7 @@ const PostCard = ({ post, index, user }) => {
   const [newComment, setNewComment] = useState('');
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
-  const initials = (post.username || 'U').slice(0, 2).toUpperCase();
+  const initials = isAnonymous ? '👻' : (post.username || 'U').slice(0, 2).toUpperCase();
 
   const handleLike = async () => {
     if (!user?.id) return;
@@ -59,7 +64,12 @@ const PostCard = ({ post, index, user }) => {
       await postService.toggleLike(post.id, user.id);
       setLiked(!liked);
       setLikeCount(c => liked ? c - 1 : c + 1);
+      if (!liked) {
+        setLikeAnimation(true);
+        setTimeout(() => setLikeAnimation(false), 800);
+      }
     } catch (err) {
+      toast.error('Could not complete like action');
       console.error('Like failed:', err);
     }
   };
@@ -89,6 +99,7 @@ const PostCard = ({ post, index, user }) => {
       });
       setNewComment('');
       setCommentCount(c => c + 1);
+      toast.success('Comment added!');
       // Optimistic update
       setComments([...comments, {
         id: Date.now(),
@@ -103,19 +114,43 @@ const PostCard = ({ post, index, user }) => {
 
   return (
     <motion.div
-      className="post-card"
+      className={`post-card ${isAnonymous ? 'anonymous-post' : ''}`}
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.35 }}
+      whileHover={{ y: -4, boxShadow: "var(--shadow-lg)" }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        boxShadow: isAnonymous ? ['0 0 10px rgba(124, 58, 237, 0.1)', '0 0 20px rgba(124, 58, 237, 0.3)', '0 0 10px rgba(124, 58, 237, 0.1)'] : 'var(--shadow-sm)'
+      }}
+      transition={{ 
+        delay: index * 0.06, 
+        duration: 0.35,
+        boxShadow: { repeat: Infinity, duration: 3 }
+      }}
+      style={{
+        border: isAnonymous ? '1px solid #7c3aed' : '1px solid var(--border)',
+        background: isAnonymous ? 'linear-gradient(to bottom right, var(--bg-primary), #1e1b4b)' : 'var(--bg-primary)'
+      }}
     >
       <div className="post-header">
-        <div className="post-avatar" style={{ background: avatarColor(post.username) }}>{initials}</div>
+        <div className="post-avatar" style={{ 
+          background: isAnonymous ? '#7c3aed' : avatarColor(post.username),
+          fontSize: isAnonymous ? 18 : 14
+        }}>
+          {initials}
+        </div>
         <div className="post-user-info" style={{ flex: 1 }}>
-          <h4>
+          <h4 style={{ color: isAnonymous ? '#a78bfa' : 'inherit' }}>
             {post.username}
-            <span className="verified">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </span>
+            {isAnonymous ? (
+              <span className="verified" style={{ background: '#7c3aed', color: '#fff' }}>
+                 GHOST
+              </span>
+            ) : (
+              <span className="verified">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </span>
+            )}
           </h4>
           <div className="post-meta">
             <span className="college-badge">🎓 {post.collegeName}</span>
@@ -130,7 +165,7 @@ const PostCard = ({ post, index, user }) => {
       {post.imageUrl && (
         <img 
           className="post-image" 
-          src={post.imageUrl.startsWith('/') ? `http://localhost:8095${post.imageUrl}` : post.imageUrl} 
+          src={post.imageUrl.startsWith('/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:8095'}${post.imageUrl}` : post.imageUrl} 
           alt="Post" 
           loading="lazy" 
         />
@@ -145,8 +180,20 @@ const PostCard = ({ post, index, user }) => {
           className={`post-action-btn ${liked ? 'liked' : ''}`}
           onClick={handleLike}
           whileTap={{ scale: 0.9 }}
+          style={{ position: 'relative' }}
         >
-          <Heart size={17} fill={liked ? 'currentColor' : 'none'} /> Like
+          <Heart size={17} fill={liked ? 'currentColor' : 'none'} style={{ zIndex: 2 }} /> 
+          {likeAnimation && (
+            <motion.div
+              initial={{ scale: 1, opacity: 1 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              style={{ position: 'absolute', color: 'var(--like-color)', zIndex: 1 }}
+            >
+              <Heart size={17} fill="currentColor" />
+            </motion.div>
+          )}
+          <span style={{ zIndex: 2 }}>Like</span>
         </motion.button>
         <button className={`post-action-btn ${showComments ? 'active' : ''}`} onClick={toggleComments}>
           <MessageCircle size={17} /> Comment
@@ -249,46 +296,80 @@ const PostCard = ({ post, index, user }) => {
   );
 };
 
-const FeedSection = ({ user }) => {
+const FeedSection = ({ user, isConfessionMode }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [showCompose, setShowCompose] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const fileInputRef = useRef(null);
 
+  const PAGE_SIZE = 10;
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
+
+  // Infinite scroll sentinel
+  const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
+    threshold: 0.1,
+    rootMargin: '200px',
+  });
 
   // Fetch feed on mount
   useEffect(() => {
-    fetchFeed();
+    fetchFeed(0, true);
   }, []);
 
-  const fetchFeed = async () => {
-    setLoading(true);
+  // Load more when sentinel is visible
+  useEffect(() => {
+    if (isIntersecting && hasMore && !loading && !loadingMore) {
+      fetchFeed(page + 1, false);
+    }
+  }, [isIntersecting]);
+
+  const fetchFeed = async (pageNum = 0, isInitial = false) => {
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     try {
-      // Filter by college name if user is verified at a college
       const res = user?.collegeName 
-        ? await postService.getCollegeFeed(user?.id, user.collegeName, 0, 20)
-        : await postService.getFeed(user?.id, 0, 20);
+        ? await postService.getCollegeFeed(user?.id, user?.collegeName, pageNum, PAGE_SIZE)
+        : await postService.getFeed(user?.id, pageNum, PAGE_SIZE);
         
       if (res.success) {
-        // res.data could be a PagedResponse with .content, or a direct list
         const feedPosts = res.data?.content || res.data || [];
-        setPosts(feedPosts);
+        const isLastPage = res.data?.last ?? (feedPosts.length < PAGE_SIZE);
+        
+        if (isInitial) {
+          setPosts(feedPosts);
+        } else {
+          setPosts(prev => [...prev, ...feedPosts]);
+        }
+        
+        setPage(pageNum);
+        setHasMore(!isLastPage && feedPosts.length > 0);
       }
     } catch (err) {
       console.error('Failed to fetch feed:', err);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Revoke previous URL to prevent memory leak
+      if (filePreview) URL.revokeObjectURL(filePreview);
       setSelectedFile(file);
       setFilePreview(URL.createObjectURL(file));
       setShowCompose(true);
@@ -308,22 +389,27 @@ const FeedSection = ({ user }) => {
       }
 
       const postData = {
-        userId: user.id,
-        username: user.username,
-        collegeName: user.collegeName,
+        userId: isConfessionMode ? 0 : user?.id, // Use 0 for anonymous user ID
+        username: isConfessionMode ? "Anonymous Ghost" : user?.username,
+        collegeName: user?.collegeName,
         content: newPostContent.trim(),
         imageUrl: imageUrl,
       };
+
       const res = await postService.createPost(postData);
       if (res.success) {
+        toast.success('Post shared successfully!');
         setNewPostContent('');
         setSelectedFile(null);
         setFilePreview(null);
         setShowCompose(false);
-        // Refresh feed
-        await fetchFeed();
+        // Reset pagination and reload from top
+        setPage(0);
+        setHasMore(true);
+        await fetchFeed(0, true);
       }
     } catch (err) {
+      toast.error(err.message || 'Failed to create post');
       console.error('Failed to create post:', err);
     } finally {
       setCreating(false);
@@ -332,29 +418,36 @@ const FeedSection = ({ user }) => {
 
   return (
     <motion.main
-      className="dash-feed"
+      className={`dash-feed ${isConfessionMode ? 'confession-active' : ''}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {/* Create Post */}
-      <div className="create-post">
+      <div className="create-post" style={{ 
+        background: isConfessionMode ? 'linear-gradient(135deg, #1e1b4b, #2e1065)' : 'var(--bg-primary)',
+        border: isConfessionMode ? '1px solid #7c3aed' : '1px solid var(--border)',
+        boxShadow: isConfessionMode ? '0 0 20px rgba(124, 58, 237, 0.2)' : 'var(--shadow-sm)'
+      }}>
         <div className="create-post-top">
-          <div className="create-post-avatar">{initials}</div>
+          <div className="create-post-avatar" style={{ background: isConfessionMode ? '#7c3aed' : 'var(--accent)' }}>
+            {isConfessionMode ? '👻' : initials}
+          </div>
           {!showCompose ? (
-            <div className="create-post-input" onClick={() => setShowCompose(true)}>
-              What's happening on campus today?
+            <div className="create-post-input" onClick={() => setShowCompose(true)} style={{ color: isConfessionMode ? '#a78bfa' : 'var(--text-muted)' }}>
+              {isConfessionMode ? "What's your secret, Ghost?" : "What's happening on campus today?"}
             </div>
           ) : (
             <textarea
               autoFocus
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder="Share something with your campus..."
+              placeholder={isConfessionMode ? "Whisper your confession..." : "Share something with your campus..."}
               style={{
                 flex: 1, padding: '10px 16px', borderRadius: 12,
-                background: 'var(--bg-tertiary)', border: '1px solid var(--accent)',
-                fontSize: 14, color: 'var(--text-primary)',
+                background: isConfessionMode ? 'rgba(0,0,0,0.2)' : 'var(--bg-tertiary)', 
+                border: `1px solid ${isConfessionMode ? '#7c3aed' : 'var(--accent)'}`,
+                fontSize: 14, color: '#fff',
                 resize: 'vertical', minHeight: 80, fontFamily: 'inherit',
                 outline: 'none',
               }}
@@ -376,7 +469,7 @@ const FeedSection = ({ user }) => {
                 style={{ width: '100%', borderRadius: 12, maxHeight: 300, objectFit: 'cover' }} 
               />
               <button 
-                onClick={() => { setSelectedFile(null); setFilePreview(null); }}
+                onClick={() => { if (filePreview) URL.revokeObjectURL(filePreview); setSelectedFile(null); setFilePreview(null); }}
                 style={{ 
                   position: 'absolute', top: 10, right: 30, 
                   background: 'rgba(0,0,0,0.5)', color: '#fff', 
@@ -451,6 +544,39 @@ const FeedSection = ({ user }) => {
       {!loading && posts.map((post, i) => (
         <PostCard key={post.id} post={post} index={i} user={user} />
       ))}
+
+      {/* Infinite scroll: loading more indicator */}
+      {loadingMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            style={{
+              width: 28, height: 28, border: '3px solid var(--border-color)',
+              borderTopColor: 'var(--accent)', borderRadius: '50%'
+            }}
+          />
+        </div>
+      )}
+
+      {/* Infinite scroll: sentinel element (triggers next page load) */}
+      {!loading && hasMore && (
+        <div ref={sentinelRef} style={{ height: 1 }} />
+      )}
+
+      {/* End of feed message */}
+      {!loading && !hasMore && posts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            textAlign: 'center', padding: '30px 20px',
+            color: 'var(--text-muted)', fontSize: 13, fontWeight: 600
+          }}
+        >
+          ✨ You've seen all posts — check back later!
+        </motion.div>
+      )}
     </motion.main>
   );
 };

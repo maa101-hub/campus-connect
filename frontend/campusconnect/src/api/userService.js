@@ -28,6 +28,51 @@ const userService = {
       throw error.response?.data || error.message;
     }
   },
+  // Change user password
+  changePassword: async (data) => {
+    try {
+      const response = await api.put('/api/user/change-password', data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  // Follow a user
+  followUser: async (targetUserId) => {
+    try {
+      const response = await api.post(`/api/user/follow/${targetUserId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  // Unfollow a user
+  unfollowUser: async (targetUserId) => {
+    try {
+      const response = await api.delete(`/api/user/follow/${targetUserId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get followers
+  getFollowers: async (userId) => {
+    try {
+      const response = await api.get(`/api/user/${userId}/followers`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get following
+  getFollowing: async (userId) => {
+    try {
+      const response = await api.get(`/api/user/${userId}/following`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default userService;

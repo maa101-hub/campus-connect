@@ -1,18 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, MessageSquare, Sun, Moon, ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { Search, Bell, MessageSquare, Sun, Moon, ChevronDown, LogOut, User, Settings, Ghost, X } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
+import useNotificationStore from '../../store/notificationStore';
+import userService from '../../api/userService';
 
-const DashNavbar = ({ user, onLogout, onNavigate }) => {
+const DashNavbar = ({ user, onLogout, onNavigate, onViewProfile, isConfessionMode, setIsConfessionMode }) => {
   const { theme, toggleTheme } = useThemeStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, user: 'Priya Sharma', action: 'liked your post about the new library hours.', time: '2m ago' },
-    { id: 2, user: 'Rahul Verma', action: 'commented: "This is super helpful, thanks!"', time: '1h ago' },
-    { id: 3, user: 'Campus Admin', action: 'verified your student status.', time: '1d ago' },
-  ]);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const searchInputRef = useRef(null);
+  
+  const { notifications, unreadNotificationCount, unreadMessageCount, markNotificationsAsRead } = useNotificationStore();
+
+  useEffect(() => {
+    if (showCommandPalette && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current.focus(), 100);
+    }
+  }, [showCommandPalette]);
+
+  // Handle Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+      if (e.key === 'Escape') {
+        setShowCommandPalette(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length > 1) {
+        setSearching(true);
+        try {
+          const res = await userService.getCollegeUsers(user?.collegeName);
+          let filtered = [];
+          if (res.success && res.data) {
+            filtered = res.data.filter(u => 
+              (u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              u.username.toLowerCase().includes(searchQuery.toLowerCase())) &&
+              u.id !== user?.id
+            ).slice(0, 5);
+          }
+          
+          // DUMMY FALLBACK for demonstration if DB is empty
+          if (filtered.length === 0) {
+            const DUMMY_STUDENTS = [
+              { id: 'd1', name: 'Alex Rivera', username: 'arivera' },
+              { id: 'd2', name: 'Sam Chen', username: 'schen_dev' },
+              { id: 'd3', name: 'Jordan Taylor', username: 'jtaylor' },
+              { id: 'd4', name: 'Casey Smith', username: 'caseys' },
+              { id: 'd5', name: 'Riley Jones', username: 'rileyj' }
+            ];
+            filtered = DUMMY_STUDENTS.filter(u => 
+              u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              u.username.toLowerCase().includes(searchQuery.toLowerCase())
+            ).slice(0, 5);
+          }
+          
+          setSearchResults(filtered);
+        } catch (err) {
+          console.error("Search failed:", err);
+        } finally {
+          setSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, user?.collegeName, user?.id]);
+
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
+
+  const handleOpenNotifs = () => {
+    setShowNotifs(!showNotifs);
+    setShowDropdown(false);
+    if (!showNotifs) markNotificationsAsRead();
+  };
 
   return (
     <nav className="dash-nav">
@@ -25,11 +102,142 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
         <span>Campus</span>Connect
       </a>
 
-      {/* Search */}
-      <div className="dash-nav-search">
-        <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-        <input placeholder="Search posts, people, topics..." />
+      {/* Search Trigger */}
+      <div 
+        onClick={() => setShowCommandPalette(true)}
+        style={{ 
+          display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-secondary)', 
+          padding: '8px 16px', borderRadius: 20, cursor: 'pointer', width: '100%', maxWidth: 300, 
+          border: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: 14, 
+          justifyContent: 'space-between', transition: 'border-color 0.2s', margin: '0 20px'
+        }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Search size={16} />
+          <span>Search CampusConnect...</span>
+        </div>
+        <kbd style={{ background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 6, fontSize: 11, fontWeight: 700, fontFamily: 'monospace' }}>⌘K</kbd>
       </div>
+
+      {/* Command Palette Modal via Portal */}
+      {createPortal(
+        <AnimatePresence>
+          {showCommandPalette && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', justifyContent: 'center', paddingTop: '12vh' }}>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+                style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 0 }}
+                onClick={() => setShowCommandPalette(false)}
+              />
+              
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                style={{ 
+                  position: 'relative', zIndex: 10, width: '90%', maxWidth: 600, background: 'var(--bg-primary)', 
+                  borderRadius: 16, border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                  overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '70vh'
+                }}
+              >
+                {/* Search Input Area */}
+                <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
+                  <Search size={20} style={{ color: 'var(--accent)', marginRight: 12 }} />
+                  <input 
+                    ref={searchInputRef}
+                    placeholder="Search students, professors, or clubs..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ 
+                      border: 'none', background: 'transparent', outline: 'none', 
+                      width: '100%', fontSize: 16, color: 'var(--text-primary)' 
+                    }}
+                  />
+                  <kbd style={{ background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: 6, fontSize: 11, color: 'var(--text-muted)' }}>ESC</kbd>
+                </div>
+
+                {/* Results Area */}
+                <div style={{ padding: 12, overflowY: 'auto', flex: 1 }}>
+                  {searchQuery.length > 1 && searchResults.length === 0 && !searching && (
+                    <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      No results found for "{searchQuery}"
+                    </div>
+                  )}
+                  
+                  {searchResults.length > 0 && (
+                    <div>
+                      <h4 style={{ margin: '8px 8px 12px', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Students</h4>
+                      {searchResults.map((result, i) => (
+                        <motion.div 
+                          initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                          key={result.id} 
+                          onClick={() => { 
+                            if (onViewProfile) {
+                              onViewProfile(result);
+                            } else {
+                              onNavigate('profile');
+                            }
+                            setShowCommandPalette(false); 
+                            setSearchQuery(''); 
+                          }}
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', 
+                            borderRadius: 10, cursor: 'pointer', transition: 'background 0.2s' 
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        >
+                          <div style={{ 
+                            width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent) 0%, #ec4899 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 700
+                          }}>
+                            {result.name.charAt(0)}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{result.name}</p>
+                            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>@{result.username}</p>
+                          </div>
+                          <ChevronDown size={16} style={{ color: 'var(--text-muted)', transform: 'rotate(-90deg)' }} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!searchQuery && (
+                    <div style={{ padding: '20px 8px' }}>
+                      <h4 style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Suggested Actions</h4>
+                      <div 
+                        onClick={() => { onNavigate('messages'); setShowCommandPalette(false); }}
+                        style={{ padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        <MessageSquare size={16} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontSize: 14, color: 'var(--text-primary)' }}>Open Messages</span>
+                      </div>
+                      <div 
+                        onClick={() => { toggleTheme(); setShowCommandPalette(false); }}
+                        style={{ padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        {theme === 'light' ? <Moon size={16} style={{ color: 'var(--text-muted)' }} /> : <Sun size={16} style={{ color: 'var(--text-muted)' }} />}
+                        <span style={{ fontSize: 14, color: 'var(--text-primary)' }}>Toggle Theme</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Actions */}
       <div className="dash-nav-actions">
@@ -47,17 +255,33 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
           </AnimatePresence>
         </button>
 
-        <button className="nav-icon-btn">
+        <button 
+          className={`nav-icon-btn ${isConfessionMode ? 'active-confession' : ''}`} 
+          onClick={() => setIsConfessionMode(!isConfessionMode)}
+          title="Toggle Confession Mode"
+        >
+          <Ghost size={18} />
+          {isConfessionMode && <span className="confession-dot" />}
+        </button>
+
+        <button className="nav-icon-btn" onClick={() => onNavigate('messages')} style={{ position: 'relative' }}>
           <MessageSquare size={18} />
+          {unreadMessageCount > 0 && (
+            <span style={{
+              position: 'absolute', top: 6, right: 6, width: 14, height: 14, 
+              borderRadius: '50%', background: '#EF4444', color: '#fff',
+              fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+            }}>{unreadMessageCount}</span>
+          )}
         </button>
 
         <div style={{ position: 'relative' }}>
           <button 
             className="nav-icon-btn" 
-            onClick={() => { setShowNotifs(!showNotifs); setShowDropdown(false); }}
+            onClick={handleOpenNotifs}
           >
             <Bell size={18} />
-            {notifications.length > 0 && (
+            {unreadNotificationCount > 0 && (
               <span style={{
                 position: 'absolute', top: 6, right: 6, width: 8, height: 8, 
                 borderRadius: '50%', background: '#EF4444'
@@ -81,7 +305,6 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
               >
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Notifications</h4>
-                  <button onClick={() => setNotifications([])} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>Mark all as read</button>
                 </div>
                 <div style={{ maxHeight: 300, overflowY: 'auto' }}>
                   {notifications.length === 0 ? (
@@ -96,6 +319,7 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
                       }}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-tertiary)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        onClick={() => { setShowNotifs(false); onNavigate('messages'); }}
                       >
                         <div style={{ 
                           width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', 

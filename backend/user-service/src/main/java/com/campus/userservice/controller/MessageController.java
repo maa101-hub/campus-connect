@@ -42,4 +42,13 @@ public class MessageController {
         List<UserResponse> contacts = userService.getContacts(email);
         return ApiResponse.success(contacts, "Contacts fetched successfully");
     }
+
+    @PostMapping("/read/{senderId}")
+    public ApiResponse<?> markAsRead(
+            Authentication authentication,
+            @PathVariable Long senderId) {
+        String email = authentication.getName();
+        userService.markConversationAsRead(email, senderId);
+        return ApiResponse.success(null, "Messages marked as read");
+    }
 }

@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CampusConnectHero from './components/CampusConnectHero';
 import Dashboard from './pages/Dashboard';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import useAuthStore from './store/authStore';
+import { Toaster } from 'react-hot-toast';
 
 // ─── Page load splash screen ──────────────────────────────────────────────────
 const Splash = ({ onDone }) => {
@@ -81,27 +83,30 @@ function App() {
   }
 
   return (
-    <Router>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          style={{ width: '100%', minHeight: '100vh' }}
-        >
-          <Routes>
-            <Route path="/" element={<CampusConnectHero />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
-              } 
-            />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
-    </Router>
+    <ErrorBoundary>
+      <Toaster position="top-right" reverseOrder={false} />
+      <Router>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: '100%', minHeight: '100vh' }}
+          >
+            <Routes>
+              <Route path="/" element={<CampusConnectHero />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
+                } 
+              />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
