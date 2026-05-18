@@ -137,6 +137,11 @@ public class ConnectionService {
         return c.getStatus().name();
     }
 
+    public Long getConnectionId(Long userId1, Long userId2) {
+        Optional<Connection> conn = connectionRepository.findConnectionBetween(userId1, userId2);
+        return conn.map(Connection::getId).orElse(null);
+    }
+
     private void updateConnectionCounts(Long requesterId, Long receiverId) {
         userRepository.findById(requesterId).ifPresent(user -> {
             long count = connectionRepository.countAcceptedConnections(requesterId);

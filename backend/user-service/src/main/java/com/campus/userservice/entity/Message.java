@@ -20,15 +20,18 @@ public class Message {
     @Column(nullable = false, length = 2000)
     private String content;
 
+    private boolean isRead = false;
+
     private LocalDateTime timestamp;
 
     public Message() {}
 
-    public Message(Long id, Long senderId, Long recipientId, String content, LocalDateTime timestamp) {
+    public Message(Long id, Long senderId, Long recipientId, String content, boolean isRead, LocalDateTime timestamp) {
         this.id = id;
         this.senderId = senderId;
         this.recipientId = recipientId;
         this.content = content;
+        this.isRead = isRead;
         this.timestamp = timestamp;
     }
 
@@ -48,6 +51,9 @@ public class Message {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean read) { this.isRead = read; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

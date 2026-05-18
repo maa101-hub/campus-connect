@@ -8,6 +8,7 @@ public class MessageResponse {
     private Long senderId;
     private Long recipientId;
     private String content;
+    private boolean isRead;
     private LocalDateTime timestamp;
 
     public MessageResponse() {}
@@ -23,6 +24,9 @@ public class MessageResponse {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean read) { this.isRead = read; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

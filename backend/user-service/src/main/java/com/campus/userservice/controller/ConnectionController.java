@@ -92,9 +92,13 @@ public class ConnectionController {
      * Check connection status between two users.
      */
     @GetMapping("/status")
-    public ApiResponse<Map<String, String>> getStatus(
+    public ApiResponse<Map<String, Object>> getStatus(
             @RequestParam Long userId1, @RequestParam Long userId2) {
         String status = connectionService.getConnectionStatus(userId1, userId2);
-        return ApiResponse.success(Map.of("status", status), "Status fetched");
+        Long connectionId = connectionService.getConnectionId(userId1, userId2);
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("status", status);
+        result.put("connectionId", connectionId);
+        return ApiResponse.success(result, "Status fetched");
     }
 }

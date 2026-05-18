@@ -30,6 +30,16 @@ const messageService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Mark all messages from a sender as read
+  markAsRead: async (senderId) => {
+    try {
+      const response = await api.post(`/api/messages/read/${senderId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default messageService;
