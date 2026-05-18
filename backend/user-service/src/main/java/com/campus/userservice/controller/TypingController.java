@@ -28,9 +28,10 @@ public class TypingController {
         Object recipientId = payload.get("recipientId");
         if (recipientId != null) {
             // Broadcast typing status to the recipient
+            // Cast payload to Object to avoid ambiguous overload resolution
             messagingTemplate.convertAndSend(
-                "/topic/typing/" + recipientId, 
-                payload
+                "/topic/typing/" + recipientId,
+                (Object) payload
             );
         }
     }

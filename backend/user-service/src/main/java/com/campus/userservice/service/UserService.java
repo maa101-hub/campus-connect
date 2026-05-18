@@ -25,4 +25,6 @@ public interface UserService {
     MessageResponse sendMessage(String senderEmail, SendMessageRequest request);
     List<MessageResponse> getConversation(String email, Long otherUserId);
     List<UserResponse> getContacts(String email);
+    // Update the user's profile photo URL
+    UserResponse updateProfilePhoto(String email, String photoUrl);
 }

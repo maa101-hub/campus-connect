@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import org.springframework.http.MediaType;
 
 import com.campus.userservice.dto.ChangePasswordRequest;
 import com.campus.userservice.dto.ForgotPasswordRequest;
@@ -83,7 +83,7 @@ public class UserController {
         return ApiResponse.success(users, "College users fetched successfully");
     }
 
-    @PostMapping("/profile-photo")
+    @PostMapping(value = "/profile-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<String> uploadProfilePhoto(
             Authentication authentication,
             @RequestParam("file") MultipartFile file) {
@@ -116,12 +116,9 @@ public class UserController {
 
             // Store URL in user profile
             String photoUrl = "/uploads/profiles/" + filename;
-            
-            // Update user entity
-            com.campus.userservice.entity.User user = 
-                ((com.campus.userservice.service.UserServiceImpl) userService).getUserByEmail(email);
-            user.setProfilePhotoUrl(photoUrl);
-            ((com.campus.userservice.service.UserServiceImpl) userService).saveUser(user);
+
+            // Update user profile via service interface (no casting)
+            UserResponse updated = userService.updateProfilePhoto(email, photoUrl);
 
             log.info("Profile photo uploaded successfully: {}", photoUrl);
             return ApiResponse.success(photoUrl, "Profile photo uploaded successfully");

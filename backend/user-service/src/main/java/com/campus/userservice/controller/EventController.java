@@ -24,19 +24,18 @@ public class EventController {
      */
     @PostMapping
     public ApiResponse<Event> createEvent(@RequestBody Map<String, Object> body) {
-        Event event = Event.builder()
-                .organizerId(Long.valueOf(body.get("organizerId").toString()))
-                .organizerName((String) body.get("organizerName"))
-                .title((String) body.get("title"))
-                .description((String) body.get("description"))
-                .collegeName((String) body.get("collegeName"))
-                .eventDate(LocalDateTime.parse((String) body.get("eventDate")))
-                .location((String) body.get("location"))
-                .category((String) body.getOrDefault("category", "OTHER"))
-                .maxAttendees(Integer.valueOf(body.getOrDefault("maxAttendees", 50).toString()))
-                .rsvpCount(0)
-                .active(true)
-                .build();
+        Event event = new Event();
+        event.setOrganizerId(Long.valueOf(body.get("organizerId").toString()));
+        event.setOrganizerName((String) body.get("organizerName"));
+        event.setTitle((String) body.get("title"));
+        event.setDescription((String) body.get("description"));
+        event.setCollegeName((String) body.get("collegeName"));
+        event.setEventDate(LocalDateTime.parse((String) body.get("eventDate")));
+        event.setLocation((String) body.get("location"));
+        event.setCategory((String) body.getOrDefault("category", "OTHER"));
+        event.setMaxAttendees(Integer.valueOf(body.getOrDefault("maxAttendees", 50).toString()));
+        event.setRsvpCount(0);
+        event.setActive(true);
 
         Event saved = eventService.createEvent(event);
         return ApiResponse.success(saved, "Event created successfully");

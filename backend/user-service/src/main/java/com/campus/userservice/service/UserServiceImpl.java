@@ -138,6 +138,15 @@ public class UserServiceImpl implements UserService {
 				.collect(Collectors.toList());
 	}
 
+	@Override
+	public UserResponse updateProfilePhoto(String email, String photoUrl) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		user.setProfilePhotoUrl(photoUrl);
+		user.setUpdatedAt(LocalDateTime.now());
+		return mapToResponse(userRepository.save(user));
+	}
+
 	@Autowired
 	private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
