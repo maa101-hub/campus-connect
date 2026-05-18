@@ -1,16 +1,10 @@
 package com.campus.userservice.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Message {
 
     @Id
@@ -27,12 +21,11 @@ public class Message {
     private String content;
 
     @Column(name = "is_read")
-    @Builder.Default
-    private boolean isRead = false;
+    private Boolean isRead = false;
 
     private LocalDateTime timestamp;
 
-
+    public Message() {}
 
     @PrePersist
     protected void onCreate() {
@@ -51,7 +44,7 @@ public class Message {
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
 
-    public boolean isRead() { return isRead; }
+    public boolean isRead() { return isRead != null ? isRead : false; }
     public void setRead(boolean read) { this.isRead = read; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
