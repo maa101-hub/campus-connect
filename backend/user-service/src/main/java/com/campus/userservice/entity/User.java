@@ -52,6 +52,13 @@ public class User {
     private String skills;
     private String interests;
 
+    // Social counts (updated when connections change)
+    @Column(columnDefinition = "integer default 0")
+    private Integer followerCount = 0;
+
+    @Column(columnDefinition = "integer default 0")
+    private Integer followingCount = 0;
+
     // Timestamps
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CampusConnectHero from './components/CampusConnectHero';
 import Dashboard from './pages/Dashboard';
 import useAuthStore from './store/authStore';
+import { ToastProvider } from './components/ui/Toast';
 
 // ─── Page load splash screen ──────────────────────────────────────────────────
 const Splash = ({ onDone }) => {
@@ -81,27 +82,29 @@ function App() {
   }
 
   return (
-    <Router>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          style={{ width: '100%', minHeight: '100vh' }}
-        >
-          <Routes>
-            <Route path="/" element={<CampusConnectHero />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
-              } 
-            />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
-    </Router>
+    <ToastProvider>
+      <Router>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: '100%', minHeight: '100vh' }}
+          >
+            <Routes>
+              <Route path="/" element={<CampusConnectHero />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
+                } 
+              />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </Router>
+    </ToastProvider>
   );
 }
 

@@ -1,1 +1,31 @@
 /.metadata/
+
+# ===== Environment files (NEVER commit secrets) =====
+*.env
+.env
+.env.*
+!.env.example
+
+# ===== Java / Maven =====
+target/
+*.class
+*.jar
+*.war
+*.log
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+
+# ===== Node / Frontend =====
+node_modules/
+dist/
+.vite/
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+
+# ===== Upload directories =====
+uploads/

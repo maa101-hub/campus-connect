@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import connectionService from '../../api/connectionService';
+import { useToast } from '../ui/Toast';
 
 const TRENDING = [
   { title: 'Campus Hackathon 2026 — Registration Open', posts: '2.3k posts' },
@@ -20,7 +23,15 @@ const SUGGESTIONS = [
   { name: 'Karthik R.', college: 'VIT Vellore', color: '#22C55E' },
 ];
 
-const RightSidebar = () => {
+const RightSidebar = ({ user }) => {
+  const [connectedIds, setConnectedIds] = useState([]);
+  const toast = useToast();
+
+  const handleConnect = async (suggestionName) => {
+    // This is placeholder since suggestions are static — in real app would use user IDs
+    toast.info(`Connection feature works from the Campus Directory page for real users.`);
+  };
+
   return (
     <motion.aside
       className="dash-sidebar-right"
@@ -96,6 +107,7 @@ const RightSidebar = () => {
                 className="connect-btn"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => handleConnect(s.name)}
               >
                 Connect
               </motion.button>

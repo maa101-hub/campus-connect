@@ -8,6 +8,7 @@ import {
 import postService from '../../api/postService';
 import userService from '../../api/userService';
 import useAuthStore from '../../store/authStore';
+import { useToast } from '../ui/Toast';
 
 const ProfileSection = ({ user }) => {
   const [posts, setPosts] = useState([]);
@@ -17,6 +18,7 @@ const ProfileSection = ({ user }) => {
   const [editData, setEditData] = useState({ ...user });
   const [saving, setSaving] = useState(false);
   const updateUserStore = useAuthStore(state => state.updateUser);
+  const toast = useToast();
 
   useEffect(() => {
     if (user?.id) {
@@ -46,9 +48,10 @@ const ProfileSection = ({ user }) => {
       if (res.success) {
         updateUserStore(res.data);
         setIsEditing(false);
+        toast.success('Profile updated successfully!');
       }
     } catch (err) {
-      alert(err.message || 'Failed to update profile');
+      toast.error(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -56,8 +59,8 @@ const ProfileSection = ({ user }) => {
 
   const stats = [
     { label: 'Posts', value: posts.length, icon: <Grid size={16} /> },
-    { label: 'Followers', value: '248', icon: <User size={16} /> },
-    { label: 'Following', value: '182', icon: <User size={16} /> },
+    { label: 'Followers', value: user?.followerCount ?? 0, icon: <User size={16} /> },
+    { label: 'Following', value: user?.followingCount ?? 0, icon: <User size={16} /> },
   ];
 
   const skillList = user?.skills ? user.skills.split(',').map(s => s.trim()) : ['React', 'Java', 'UI Design'];

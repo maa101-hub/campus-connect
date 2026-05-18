@@ -1,3 +1,22 @@
 target/
 node_modules/
 .metadata/
+
+# Environment files
+*.env
+.env
+.env.*
+
+# IDE
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+.vscode/
+
+# Logs
+*.log
+
+# Upload directory
+uploads/

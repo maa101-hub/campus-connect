@@ -252,37 +252,75 @@ const PostCard = ({ post, index, user }) => {
 const FeedSection = ({ user }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [showCompose, setShowCompose] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const fileInputRef = useRef(null);
+  const loadMoreRef = useRef(null);
 
+  const PAGE_SIZE = 10;
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
 
   // Fetch feed on mount
   useEffect(() => {
-    fetchFeed();
+    fetchFeed(0, true);
   }, []);
 
-  const fetchFeed = async () => {
-    setLoading(true);
+  // Infinite scroll with IntersectionObserver
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, page]);
+
+  const fetchFeed = async (pageNum = 0, isInitial = false) => {
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
     try {
-      // Filter by college name if user is verified at a college
       const res = user?.collegeName 
-        ? await postService.getCollegeFeed(user?.id, user.collegeName, 0, 20)
-        : await postService.getFeed(user?.id, 0, 20);
+        ? await postService.getCollegeFeed(user?.id, user.collegeName, pageNum, PAGE_SIZE)
+        : await postService.getFeed(user?.id, pageNum, PAGE_SIZE);
         
       if (res.success) {
-        // res.data could be a PagedResponse with .content, or a direct list
         const feedPosts = res.data?.content || res.data || [];
-        setPosts(feedPosts);
+        const totalPages = res.data?.totalPages || 1;
+        
+        if (isInitial) {
+          setPosts(feedPosts);
+        } else {
+          setPosts(prev => [...prev, ...feedPosts]);
+        }
+
+        setPage(pageNum);
+        setHasMore(pageNum + 1 < totalPages && feedPosts.length === PAGE_SIZE);
       }
     } catch (err) {
       console.error('Failed to fetch feed:', err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
+      else setLoadingMore(false);
+    }
+  };
+
+  const loadNextPage = () => {
+    if (!loadingMore && hasMore) {
+      fetchFeed(page + 1, false);
     }
   };
 
@@ -320,8 +358,11 @@ const FeedSection = ({ user }) => {
         setSelectedFile(null);
         setFilePreview(null);
         setShowCompose(false);
-        // Refresh feed
-        await fetchFeed();
+        // Refresh feed from the beginning
+        setPosts([]);
+        setPage(0);
+        setHasMore(true);
+        await fetchFeed(0, true);
       }
     } catch (err) {
       console.error('Failed to create post:', err);
@@ -451,6 +492,50 @@ const FeedSection = ({ user }) => {
       {!loading && posts.map((post, i) => (
         <PostCard key={post.id} post={post} index={i} user={user} />
       ))}
+
+      {/* Infinite scroll trigger + Load More */}
+      {!loading && hasMore && (
+        <div ref={loadMoreRef} style={{ padding: '20px 0', textAlign: 'center' }}>
+          {loadingMore ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--text-muted)', fontSize: 13 }}
+            >
+              <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+              Loading more posts...
+            </motion.div>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={loadNextPage}
+              style={{
+                padding: '10px 28px', borderRadius: 12,
+                background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              Load More Posts
+            </motion.button>
+          )}
+        </div>
+      )}
+
+      {/* End of feed */}
+      {!loading && !hasMore && posts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)',
+            fontSize: 13, borderTop: '1px solid var(--border-light)', marginTop: 8
+          }}
+        >
+          You've reached the end of the feed
+        </motion.div>
+      )}
     </motion.main>
   );
 };

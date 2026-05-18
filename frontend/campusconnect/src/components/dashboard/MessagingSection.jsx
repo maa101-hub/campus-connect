@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Search, Phone, Video, MoreVertical, Paperclip, Smile } from 'lucide-react';
+import { Send, User, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare } from 'lucide-react';
 import messageService from '../../api/messageService';
 
 import SockJS from 'sockjs-client';

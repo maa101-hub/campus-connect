@@ -469,3 +469,11 @@
   .dash-nav-search { display: none; }
   .dash-root { padding-bottom: 70px; }
 }
+
+
+
+/* ─── Spinner animation for search loading ─── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
