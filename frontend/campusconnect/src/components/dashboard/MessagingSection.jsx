@@ -81,8 +81,8 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
           if (payload.type === 'READ_RECEIPT') {
             setMessages(prev =>
               prev.map(m =>
-                m.senderId === user.id && m.recipientId === payload.conversationWith
-                  ? { ...m, read: true }
+                m.senderId === user.id && String(m.recipientId) === String(payload.conversationWith)
+                  ? { ...m, read: true, isRead: true }
                   : m
               )
             );
@@ -90,13 +90,15 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
           }
 
           // Regular incoming message
-          if (activeChatRef.current && activeChatRef.current.id === payload.senderId) {
+          // Use == for comparison (payload.senderId might be number or string)
+          if (activeChatRef.current && String(activeChatRef.current.id) === String(payload.senderId)) {
             setMessages(prev => [...prev, payload]);
             // Immediately mark as read since the chat is open
             messageService.markAsRead(payload.senderId).catch(() => {});
           } else {
-            // Flash the contact badge (future: unread count)
-            console.log('[WS] New message from someone not in active chat');
+            // Refresh contacts to show new message badge
+            fetchContacts();
+            console.log('[WS] New message from someone not in active chat', payload.senderId);
           }
         });
 
@@ -104,7 +106,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
         stompClient.subscribe(`/topic/typing/${user.id}`, (msg) => {
           if (!msg.body) return;
           const typingData = JSON.parse(msg.body);
-          if (activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
+          if (activeChatRef.current && String(activeChatRef.current.id) === String(typingData.senderId)) {
             setIsTyping(typingData.typing === true);
             if (typingData.typing) {
               if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
