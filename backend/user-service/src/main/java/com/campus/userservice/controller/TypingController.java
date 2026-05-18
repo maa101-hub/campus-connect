@@ -6,7 +6,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.util.Map;
+import com.campus.userservice.dto.TypingEvent;
 
 /**
  * WebSocket controller for handling typing indicator events.
@@ -22,16 +22,17 @@ public class TypingController {
     /**
      * Receives typing events from clients.
      * Payload: { "senderId": 1, "recipientId": 2, "typing": true }
+     *
+     * Using a typed DTO instead of Map ensures Jackson can correctly
+     * deserialize the STOMP payload regardless of content-type header.
      */
     @MessageMapping("/typing")
-    public void handleTyping(@Payload Map<String, Object> payload) {
-        Object recipientId = payload.get("recipientId");
+    public void handleTyping(@Payload TypingEvent payload) {
+        Long recipientId = payload.getRecipientId();
         if (recipientId != null) {
-            // Broadcast typing status to the recipient
-            // Cast payload to Object to avoid ambiguous overload resolution
             messagingTemplate.convertAndSend(
                 "/topic/typing/" + recipientId,
-                (Object) payload
+                payload
             );
         }
     }

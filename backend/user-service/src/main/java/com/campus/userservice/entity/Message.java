@@ -1,10 +1,16 @@
 package com.campus.userservice.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Message {
 
     @Id
@@ -20,20 +26,13 @@ public class Message {
     @Column(nullable = false, length = 2000)
     private String content;
 
+    @Column(name = "is_read")
+    @Builder.Default
     private boolean isRead = false;
 
     private LocalDateTime timestamp;
 
-    public Message() {}
 
-    public Message(Long id, Long senderId, Long recipientId, String content, boolean isRead, LocalDateTime timestamp) {
-        this.id = id;
-        this.senderId = senderId;
-        this.recipientId = recipientId;
-        this.content = content;
-        this.isRead = isRead;
-        this.timestamp = timestamp;
-    }
 
     @PrePersist
     protected void onCreate() {

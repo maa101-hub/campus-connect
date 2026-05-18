@@ -190,6 +190,23 @@ public class UserServiceImpl implements UserService {
 				.collect(Collectors.toList());
 	}
 
+	@Override
+	@org.springframework.transaction.annotation.Transactional
+	public void markAsRead(String readerEmail, Long senderId) {
+		User reader = userRepository.findByEmail(readerEmail)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		// Mark all unread messages FROM senderId TO reader as read
+		int updated = messageRepository.markMessagesAsRead(senderId, reader.getId());
+		if (updated > 0) {
+			// Notify the original sender that their messages were read
+			java.util.Map<String, Object> receipt = new java.util.HashMap<>();
+			receipt.put("type", "READ_RECEIPT");
+			receipt.put("readBy", reader.getId());
+			receipt.put("conversationWith", reader.getId());
+			messagingTemplate.convertAndSend("/topic/messages/" + senderId, (Object) receipt);
+		}
+	}
+
 	private UserResponse mapToResponse(User user) {
 		UserResponse r = new UserResponse();
 		r.setId(user.getId());
@@ -228,12 +245,5 @@ public class UserServiceImpl implements UserService {
 		r.setRead(m.isRead());
 		r.setTimestamp(m.getTimestamp());
 		return r;
-	}
-
-	@org.springframework.transaction.annotation.Transactional
-	public void markMessagesAsRead(String email, Long senderId) {
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new BadRequestException("User not found"));
-		messageRepository.markMessagesAsRead(senderId, user.getId());
 	}
 }

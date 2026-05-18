@@ -5,7 +5,6 @@ import com.campus.userservice.dto.SendMessageRequest;
 import com.campus.userservice.dto.UserResponse;
 import com.campus.userservice.response.ApiResponse;
 import com.campus.userservice.service.UserService;
-import com.campus.userservice.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -47,13 +46,14 @@ public class MessageController {
     /**
      * POST /api/messages/read/{senderId}
      * Mark all messages from senderId as read for the authenticated user.
+     * Triggers a WebSocket read-receipt broadcast to the sender.
      */
     @PostMapping("/read/{senderId}")
     public ApiResponse<?> markAsRead(
             Authentication authentication,
             @PathVariable Long senderId) {
         String email = authentication.getName();
-        ((UserServiceImpl) userService).markMessagesAsRead(email, senderId);
+        userService.markAsRead(email, senderId);
         return ApiResponse.success(null, "Messages marked as read");
     }
 }

@@ -1,11 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare } from 'lucide-react';
+import { Send, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import messageService from '../../api/messageService';
-
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
+// ─── Typing Bubble ─────────────────────────────────────────────────────────────
+const TypingBubble = () => (
+  <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 4, paddingLeft: 8 }}>
+    <div style={{
+      padding: '10px 16px', borderRadius: 18, borderBottomLeftRadius: 4,
+      background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', gap: 5,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+    }}>
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{
+          width: 7, height: 7, borderRadius: '50%',
+          background: 'var(--text-muted)',
+          display: 'inline-block',
+          animation: 'typingBounce 1.2s ease-in-out infinite',
+          animationDelay: `${i * 0.2}s`
+        }} />
+      ))}
+    </div>
+  </div>
+);
+
+// ─── Message Tick ────────────────────────────────────────────────────────────────
+const MessageTick = ({ isRead }) => (
+  isRead
+    ? <CheckCheck size={13} style={{ color: '#60a5fa', flexShrink: 0 }} />
+    : <Check size={13} style={{ color: 'rgba(255,255,255,0.6)', flexShrink: 0 }} />
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────────
 const MessagingSection = ({ user, initialRecipient = null }) => {
   const [contacts, setContacts] = useState([]);
   const [activeChat, setActiveChat] = useState(initialRecipient);
@@ -13,71 +41,80 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
   const [newMessage, setNewMessage] = useState('');
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);    // other user is typing
+  const [searchQuery, setSearchQuery] = useState('');
+
   const messagesEndRef = useRef(null);
   const stompClientRef = useRef(null);
   const activeChatRef = useRef(activeChat);
   const typingTimeoutRef = useRef(null);
+  const typingSentRef = useRef(false);
+  const typingDebounceRef = useRef(null);
 
+  // Keep activeChatRef in sync for use inside WS callbacks
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
+  // ─── WebSocket Setup ──────────────────────────────────────────────────────────
   useEffect(() => {
     fetchContacts();
 
-    // Setup WebSocket Connection
     const token = localStorage.getItem('token');
     const socket = new SockJS(`http://localhost:8095/ws?token=${token}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
-      debug: (str) => { console.log(str); },
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('Connected to WebSocket');
-        // Subscribe to messages
+        console.log('[WS] Connected');
+
+        // ── Incoming messages & read receipts ──
         stompClient.subscribe(`/topic/messages/${user.id}`, (msg) => {
-          if (msg.body) {
-            const incomingMessage = JSON.parse(msg.body);
-            console.log('Received message:', incomingMessage);
-            
-            // Only add to messages if we are chatting with the sender
-            if (activeChatRef.current && activeChatRef.current.id === incomingMessage.senderId) {
-              setMessages((prevMessages) => [...prevMessages, incomingMessage]);
-            } else {
-              // Optionally trigger a notification sound or badge here
-              console.log("New message from someone else!");
-            }
+          if (!msg.body) return;
+          const payload = JSON.parse(msg.body);
+
+          // READ_RECEIPT: the other person read our messages
+          if (payload.type === 'READ_RECEIPT') {
+            setMessages(prev =>
+              prev.map(m =>
+                m.senderId === user.id && m.recipientId === payload.conversationWith
+                  ? { ...m, read: true }
+                  : m
+              )
+            );
+            return;
+          }
+
+          // Regular incoming message
+          if (activeChatRef.current && activeChatRef.current.id === payload.senderId) {
+            setMessages(prev => [...prev, payload]);
+            // Immediately mark as read since the chat is open
+            messageService.markAsRead(payload.senderId).catch(() => {});
+          } else {
+            // Flash the contact badge (future: unread count)
+            console.log('[WS] New message from someone not in active chat');
           }
         });
 
-        // Subscribe to typing indicators
+        // ── Typing indicators ──
         stompClient.subscribe(`/topic/typing/${user.id}`, (msg) => {
-          if (msg.body) {
-            const typingData = JSON.parse(msg.body);
-            // Handle read receipt
-            if (typingData.readReceipt && activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
-              // Mark all our sent messages as read
-              setMessages(prev => prev.map(m => 
-                m.senderId === user.id ? { ...m, isRead: true, read: true } : m
-              ));
-              return;
-            }
-            // Show typing only if it's from the active chat partner
-            if (activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
-              setIsTyping(typingData.typing === true);
-              // Auto-clear typing after 3s as fallback
-              if (typingData.typing) {
-                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
-              }
+          if (!msg.body) return;
+          const typingData = JSON.parse(msg.body);
+          if (activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
+            setIsTyping(typingData.typing === true);
+            if (typingData.typing) {
+              if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+              typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
             }
           }
         });
+      },
+      onStompError: (frame) => {
+        console.error('[WS] STOMP error', frame);
       },
     });
 
@@ -87,16 +124,19 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     return () => {
       stompClient.deactivate();
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
     };
   }, [user.id]);
 
+  // ─── Load conversation when switching chats ──────────────────────────────────
   useEffect(() => {
     if (activeChat) {
+      setIsTyping(false);
       fetchConversation(activeChat.id);
     }
   }, [activeChat]);
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToBottom, [messages, isTyping]);
 
   const fetchContacts = async () => {
     setLoadingContacts(true);
@@ -110,62 +150,41 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     }
   };
 
-  const fetchConversation = async (otherUserId, isPolling = false) => {
-    if (!isPolling) setLoadingMessages(true);
+  const fetchConversation = async (otherUserId) => {
+    setLoadingMessages(true);
     try {
       const res = await messageService.getConversation(otherUserId);
       if (res.success) {
-        if (res.data.length !== messages.length || !isPolling) {
-          setMessages(res.data);
-        }
-      }
-      // Mark messages from this user as read
-      await messageService.markAsRead(otherUserId);
-      // Notify sender that messages were read via WebSocket
-      if (stompClientRef.current?.connected) {
-        stompClientRef.current.publish({
-          destination: '/app/typing',
-          body: JSON.stringify({
-            senderId: user.id,
-            recipientId: otherUserId,
-            typing: false,
-            readReceipt: true,
-          }),
-        });
+        setMessages(res.data);
+        // Mark their messages as read when opening a conversation
+        messageService.markAsRead(otherUserId).catch(() => {});
       }
     } catch (err) {
       console.error('Failed to fetch conversation:', err);
     } finally {
-      if (!isPolling) setLoadingMessages(false);
+      setLoadingMessages(false);
     }
   };
 
-  // ─── Typing Indicator Logic ───────────────────────────────
-  const typingSentRef = useRef(false);
-  const typingDebounceRef = useRef(null);
-
-  const sendTypingEvent = (typing) => {
-    if (!stompClientRef.current?.connected || !activeChat) return;
+  // ─── Typing indicator send ────────────────────────────────────────────────────
+  const sendTypingEvent = useCallback((typing) => {
+    if (!stompClientRef.current?.connected || !activeChatRef.current) return;
     stompClientRef.current.publish({
       destination: '/app/typing',
       body: JSON.stringify({
         senderId: user.id,
-        recipientId: activeChat.id,
-        typing: typing,
+        recipientId: activeChatRef.current.id,
+        typing,
       }),
     });
-  };
+  }, [user.id]);
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-
-    // Send "typing" event (debounced)
     if (!typingSentRef.current) {
       sendTypingEvent(true);
       typingSentRef.current = true;
     }
-
-    // Reset typing after 1.5s of no input
     if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
     typingDebounceRef.current = setTimeout(() => {
       sendTypingEvent(false);
@@ -173,12 +192,14 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     }, 1500);
   };
 
+  // ─── Send message ─────────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat) return;
 
-    // Send stop typing when sending message
     sendTypingEvent(false);
+    if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+    typingSentRef.current = false;
 
     const content = newMessage.trim();
     setNewMessage('');
@@ -186,11 +207,10 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     try {
       const res = await messageService.sendMessage({
         recipientId: activeChat.id,
-        content: content
+        content,
       });
       if (res.success) {
-        setMessages([...messages, res.data]);
-        // If this is a new contact, refresh contacts list
+        setMessages(prev => [...prev, res.data]);
         if (!contacts.find(c => c.id === activeChat.id)) {
           fetchContacts();
         }
@@ -200,223 +220,318 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     }
   };
 
+  const filteredContacts = contacts.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatTime = (ts) => {
+    if (!ts) return '';
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="messaging-container" style={{ 
-      display: 'flex', height: 'calc(100vh - 100px)', 
-      background: 'var(--bg-secondary)', borderRadius: 24, 
-      overflow: 'hidden', border: '1px solid var(--border)',
-      margin: '0 24px 24px 24px'
-    }}>
-      {/* Contacts List */}
-      <div className="contacts-sidebar" style={{ 
-        width: 320, borderRight: '1px solid var(--border)', 
-        display: 'flex', flexDirection: 'column' 
+    <>
+      {/* Inject @keyframes for typing animation */}
+      <style>{`
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-6px); opacity: 1; }
+        }
+      `}</style>
+
+      <div style={{
+        display: 'flex',
+        height: 'calc(100vh - 100px)',
+        background: 'var(--bg-secondary)',
+        borderRadius: 24,
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        margin: '0 24px 24px 24px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }}>
-        <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16 }}>Messages</h3>
-          <div className="dash-nav-search" style={{ width: '100%', maxWidth: '100%' }}>
-            <Search size={16} style={{ color: 'var(--text-muted)' }} />
-            <input placeholder="Search chats..." />
+
+        {/* ── Contacts Sidebar ── */}
+        <div style={{
+          width: 320,
+          borderRight: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'var(--bg-primary)',
+        }}>
+          <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 14, paddingLeft: 4 }}>Messages</h3>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-tertiary)', borderRadius: 12, padding: '8px 12px',
+              border: '1px solid var(--border)',
+            }}>
+              <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search chats..."
+                style={{
+                  background: 'none', border: 'none', outline: 'none',
+                  color: 'var(--text-primary)', fontSize: 13, width: '100%',
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {loadingContacts ? (
+              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading...</div>
+            ) : filteredContacts.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                {searchQuery ? 'No results found' : 'No chats yet. Start a conversation from the Campus Directory!'}
+              </div>
+            ) : (
+              filteredContacts.map(c => (
+                <div
+                  key={c.id}
+                  onClick={() => setActiveChat(c)}
+                  style={{
+                    padding: '12px 16px',
+                    display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer',
+                    background: activeChat?.id === c.id ? 'var(--bg-accent-soft)' : 'transparent',
+                    borderLeft: activeChat?.id === c.id ? '3px solid var(--accent)' : '3px solid transparent',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 46, height: 46, borderRadius: '50%',
+                    background: 'var(--bg-accent)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, color: '#fff', fontSize: 18, flexShrink: 0,
+                  }}>
+                    {c.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{c.name}</h4>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      @{c.username}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loadingContacts ? (
-            <div style={{ padding: 20, textAlign: 'center' }}>Loading...</div>
-          ) : contacts.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
-              No messages yet. Start a conversation from the Campus Directory!
-            </div>
-          ) : (
-            contacts.map(c => (
-              <div 
-                key={c.id} 
-                onClick={() => setActiveChat(c)}
-                style={{ 
-                  padding: '12px 20px', display: 'flex', gap: 12, 
-                  alignItems: 'center', cursor: 'pointer',
-                  background: activeChat?.id === c.id ? 'var(--bg-accent-soft)' : 'transparent',
-                  borderLeft: activeChat?.id === c.id ? '4px solid var(--accent)' : '4px solid transparent'
-                }}
-              >
-                <div style={{ 
-                  width: 48, height: 48, borderRadius: 14, 
-                  background: 'var(--bg-tertiary)', display: 'flex', 
-                  alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, color: 'var(--accent)'
-                }}>
-                  {c.name.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{c.name}</h4>
+        {/* ── Chat Area ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
+          {activeChat ? (
+            <>
+              {/* Chat Header */}
+              <div style={{
+                padding: '12px 20px',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                background: 'var(--bg-primary)',
+                boxShadow: '0 1px 8px rgba(0,0,0,0.08)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 42, height: 42, borderRadius: '50%',
+                    background: 'var(--bg-accent)', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: 16, flexShrink: 0,
+                  }}>
+                    {activeChat.name.charAt(0).toUpperCase()}
                   </div>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    @{c.username}
-                  </p>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{activeChat.name}</h4>
+                    <AnimatePresence mode="wait">
+                      {isTyping ? (
+                        <motion.p
+                          key="typing"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          style={{ margin: 0, fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}
+                        >
+                          typing...
+                        </motion.p>
+                      ) : (
+                        <motion.p
+                          key="online"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          style={{ margin: 0, fontSize: 11, color: '#22C55E' }}
+                        >
+                          Online
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)' }}>
+                  <Phone size={20} style={{ cursor: 'pointer' }} />
+                  <Video size={20} style={{ cursor: 'pointer' }} />
+                  <MoreVertical size={20} style={{ cursor: 'pointer' }} />
                 </div>
               </div>
-            ))
+
+              {/* Messages */}
+              <div style={{
+                flex: 1, overflowY: 'auto', padding: '20px 20px 8px',
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                {loadingMessages ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 40 }}>Loading messages...</div>
+                ) : messages.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 60, fontSize: 13 }}>
+                    No messages yet. Say hi! 👋
+                  </div>
+                ) : (
+                  messages.map((m, i) => {
+                    const isMe = m.senderId === user.id;
+                    const prevMsg = messages[i - 1];
+                    const showDate = !prevMsg ||
+                      new Date(m.timestamp).toDateString() !== new Date(prevMsg.timestamp).toDateString();
+
+                    return (
+                      <div key={m.id ?? `msg-${i}`}>
+                        {showDate && (
+                          <div style={{
+                            textAlign: 'center', fontSize: 11, color: 'var(--text-muted)',
+                            margin: '12px 0 8px',
+                          }}>
+                            {new Date(m.timestamp).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
+                          </div>
+                        )}
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.18 }}
+                          style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 2 }}
+                        >
+                          <div style={{
+                            maxWidth: '68%',
+                            padding: '9px 13px 7px',
+                            borderRadius: 18,
+                            borderBottomRightRadius: isMe ? 4 : 18,
+                            borderBottomLeftRadius: isMe ? 18 : 4,
+                            background: isMe ? 'var(--accent)' : 'var(--bg-tertiary)',
+                            color: isMe ? '#fff' : 'var(--text-primary)',
+                            fontSize: 14,
+                            lineHeight: 1.45,
+                            boxShadow: isMe
+                              ? '0 2px 8px rgba(99,102,241,0.25)'
+                              : '0 2px 8px rgba(0,0,0,0.1)',
+                            wordBreak: 'break-word',
+                          }}>
+                            <span>{m.content}</span>
+                            <div style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                              gap: 3, marginTop: 3,
+                            }}>
+                              <span style={{ fontSize: 10, opacity: 0.7 }}>
+                                {formatTime(m.timestamp)}
+                              </span>
+                              {isMe && <MessageTick isRead={m.isRead || m.read} />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Typing indicator bubble */}
+                <AnimatePresence>
+                  {isTyping && (
+                    <motion.div
+                      key="typing-bubble"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <TypingBubble />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <form
+                onSubmit={handleSendMessage}
+                style={{
+                  padding: '12px 16px',
+                  background: 'var(--bg-primary)',
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}
+              >
+                <Paperclip size={20} style={{ color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }} />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input
+                    value={newMessage}
+                    onChange={handleInputChange}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSendMessage(e); }}
+                    placeholder="Type a message..."
+                    style={{
+                      width: '100%', padding: '11px 40px 11px 16px', borderRadius: 24,
+                      background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+                      color: 'var(--text-primary)', outline: 'none', fontSize: 14,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <Smile size={18} style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--text-muted)', cursor: 'pointer',
+                  }} />
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  style={{
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: newMessage.trim() ? 'var(--accent)' : 'var(--bg-tertiary)',
+                    color: newMessage.trim() ? '#fff' : 'var(--text-muted)',
+                    border: 'none', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', cursor: newMessage.trim() ? 'pointer' : 'default',
+                    transition: 'background 0.2s, color 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Send size={18} />
+                </motion.button>
+              </form>
+            </>
+          ) : (
+            /* No chat selected */
+            <div style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text-muted)', textAlign: 'center', padding: 40,
+            }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: 28,
+                background: 'var(--bg-tertiary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 20,
+              }}>
+                <MessageSquare size={38} style={{ color: 'var(--accent)' }} />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+                Select a conversation
+              </h3>
+              <p style={{ maxWidth: 300, fontSize: 14 }}>
+                Choose a student from your contacts or visit the Campus Directory to start a new chat.
+              </p>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Chat Area */}
-      <div className="chat-area" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {activeChat ? (
-          <>
-            {/* Chat Header */}
-            <div style={{ 
-              padding: '12px 24px', borderBottom: '1px solid var(--border)', 
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: 'var(--bg-primary)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ 
-                  width: 40, height: 40, borderRadius: 12, 
-                  background: 'var(--bg-accent)', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 14
-                }}>
-                  {activeChat.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{activeChat.name}</h4>
-                  <p style={{ margin: 0, fontSize: 11, color: isTyping ? 'var(--accent)' : '#22C55E', fontWeight: isTyping ? 600 : 400 }}>
-                    {isTyping ? 'typing...' : 'Online'}
-                  </p>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)' }}>
-                <Phone size={20} style={{ cursor: 'pointer' }} />
-                <Video size={20} style={{ cursor: 'pointer' }} />
-                <MoreVertical size={20} style={{ cursor: 'pointer' }} />
-              </div>
-            </div>
-
-            {/* Chat Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {loadingMessages ? (
-                <div style={{ textAlign: 'center' }}>Loading messages...</div>
-              ) : (
-                messages.map((m, i) => {
-                  const isMe = m.senderId === user.id;
-                  return (
-                    <div key={m.id || i} style={{ 
-                      display: 'flex', 
-                      justifyContent: isMe ? 'flex-end' : 'flex-start' 
-                    }}>
-                      <div style={{ 
-                        maxWidth: '70%', padding: '10px 16px', borderRadius: 16,
-                        background: isMe ? 'var(--accent)' : 'var(--bg-tertiary)',
-                        color: isMe ? '#fff' : 'var(--text-primary)',
-                        borderBottomRightRadius: isMe ? 4 : 16,
-                        borderBottomLeftRadius: isMe ? 16 : 4,
-                        fontSize: 14, boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                      }}>
-                        {m.content}
-                        <div style={{ 
-                          fontSize: 10, marginTop: 4, textAlign: 'right',
-                          opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4
-                        }}>
-                          {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {isMe && (
-                            <span style={{ display: 'inline-flex', marginLeft: 2 }}>
-                              {m.read || m.isRead ? (
-                                <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-                                  <path d="M1 5l3 3 5-6" stroke={m.read || m.isRead ? '#34D399' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M5 5l3 3 5-6" stroke={m.read || m.isRead ? '#34D399' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              ) : (
-                                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                                  <path d="M1 5l3 3 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
-                                </svg>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              {/* Typing Indicator */}
-              {isTyping && (
-                <div style={{ 
-                  display: 'flex', justifyContent: 'flex-start', marginBottom: 4
-                }}>
-                  <div style={{ 
-                    padding: '10px 16px', borderRadius: 16, borderBottomLeftRadius: 4,
-                    background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', gap: 4
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0s' }} />
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0.2s' }} />
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0.4s' }} />
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Chat Input */}
-            <form onSubmit={handleSendMessage} style={{ 
-              padding: 20, background: 'var(--bg-primary)', 
-              borderTop: '1px solid var(--border)',
-              display: 'flex', alignItems: 'center', gap: 12
-            }}>
-              <Paperclip size={22} style={{ color: 'var(--text-muted)', cursor: 'pointer' }} />
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input 
-                  value={newMessage}
-                  onChange={handleInputChange}
-                  placeholder="Type a message..."
-                  style={{ 
-                    width: '100%', padding: '12px 16px', borderRadius: 12,
-                    background: 'var(--bg-tertiary)', border: 'none',
-                    color: 'var(--text-primary)', outline: 'none'
-                  }}
-                />
-                <Smile size={20} style={{ position: 'absolute', right: 12, top: 12, color: 'var(--text-muted)', cursor: 'pointer' }} />
-              </div>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type="submit"
-                style={{ 
-                  width: 44, height: 44, borderRadius: 12, 
-                  background: 'var(--accent)', color: '#fff',
-                  border: 'none', display: 'flex', alignItems: 'center', 
-                  justifyContent: 'center', cursor: 'pointer'
-                }}
-              >
-                <Send size={20} />
-              </motion.button>
-            </form>
-          </>
-        ) : (
-          <div style={{ 
-            flex: 1, display: 'flex', flexDirection: 'column', 
-            alignItems: 'center', justifyContent: 'center',
-            color: 'var(--text-muted)', textAlign: 'center', padding: 40
-          }}>
-            <div style={{ 
-              width: 80, height: 80, borderRadius: 24, 
-              background: 'var(--bg-tertiary)', display: 'flex', 
-              alignItems: 'center', justifyContent: 'center',
-              marginBottom: 20
-            }}>
-              <MessageSquare size={40} style={{ color: 'var(--accent)' }} />
-            </div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-              Select a conversation
-            </h3>
-            <p style={{ maxWidth: 300, fontSize: 14 }}>
-              Choose a student from your contacts or visit the Campus Directory to start a new chat.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 
