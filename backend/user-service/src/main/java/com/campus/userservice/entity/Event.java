@@ -1,16 +1,10 @@
 package com.campus.userservice.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Event {
 
     @Id
@@ -32,17 +26,15 @@ public class Event {
     @Column(nullable = false)
     private String collegeName;
 
-    // Event details
     @Column(nullable = false)
     private LocalDateTime eventDate;
 
     private String location;
 
-    private String category; // HACKATHON, WORKSHOP, CULTURAL, SPORTS, SEMINAR, OTHER
+    private String category;
 
     private String imageUrl;
 
-    // Counters
     @Column(columnDefinition = "integer default 0")
     private Integer rsvpCount = 0;
 
@@ -51,11 +43,54 @@ public class Event {
 
     private Boolean active = true;
 
-    // Timestamps
     private LocalDateTime createdAt;
+
+    public Event() {}
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getOrganizerId() { return organizerId; }
+    public void setOrganizerId(Long organizerId) { this.organizerId = organizerId; }
+
+    public String getOrganizerName() { return organizerName; }
+    public void setOrganizerName(String organizerName) { this.organizerName = organizerName; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getCollegeName() { return collegeName; }
+    public void setCollegeName(String collegeName) { this.collegeName = collegeName; }
+
+    public LocalDateTime getEventDate() { return eventDate; }
+    public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public Integer getRsvpCount() { return rsvpCount; }
+    public void setRsvpCount(Integer rsvpCount) { this.rsvpCount = rsvpCount; }
+
+    public Integer getMaxAttendees() { return maxAttendees; }
+    public void setMaxAttendees(Integer maxAttendees) { this.maxAttendees = maxAttendees; }
+
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

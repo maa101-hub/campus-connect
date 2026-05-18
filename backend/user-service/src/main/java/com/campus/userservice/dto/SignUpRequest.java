@@ -1,8 +1,7 @@
 package com.campus.userservice.dto;
-import jakarta.validation.constraints.*;
-import lombok.Data;
 
-@Data
+import jakarta.validation.constraints.*;
+
 public class SignUpRequest {
 
     @NotBlank(message = "Name is required")
@@ -29,52 +28,23 @@ public class SignUpRequest {
     @NotBlank(message = "College name is required")
     private String collegeName;
 
-	public String getName() {
-		return name;
-	}
+    public SignUpRequest() {}
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-	public String getEmail() {
-		return email;
-	}
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-	public String getUsername() {
-		return username;
-	}
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public Long getCollegeId() { return collegeId; }
+    public void setCollegeId(Long collegeId) { this.collegeId = collegeId; }
 
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public Long getCollegeId() {
-		return collegeId;
-	}
-
-	public void setCollegeId(Long collegeId) {
-		this.collegeId = collegeId;
-	}
-
-	public String getCollegeName() {
-		return collegeName;
-	}
-
-	public void setCollegeName(String collegeName) {
-		this.collegeName = collegeName;
-	}
-    
+    public String getCollegeName() { return collegeName; }
+    public void setCollegeName(String collegeName) { this.collegeName = collegeName; }
 }

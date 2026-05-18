@@ -146,11 +146,10 @@ public class UserServiceImpl implements UserService {
 		User sender = userRepository.findByEmail(senderEmail)
 				.orElseThrow(() -> new BadRequestException("Sender not found"));
 		
-		Message message = Message.builder()
-				.senderId(sender.getId())
-				.recipientId(request.getRecipientId())
-				.content(request.getContent())
-				.build();
+		Message message = new Message();
+		message.setSenderId(sender.getId());
+		message.setRecipientId(request.getRecipientId());
+		message.setContent(request.getContent());
 		
 		Message saved = messageRepository.save(message);
 		MessageResponse response = mapToMessageResponse(saved);

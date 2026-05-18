@@ -3,10 +3,8 @@ package com.campus.postservice.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
 @Entity
-@Data
 @Table(name = "posts")
 public class Post {
     @Id
