@@ -28,6 +28,20 @@ const userService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Upload profile photo
+  uploadProfilePhoto: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/api/user/profile-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default userService;

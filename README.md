@@ -1,73 +1,151 @@
 # 🎓 Campus Connect
 
-## 🚀 Overview
-
-Campus Connect is a **college-based private social networking platform** designed to connect students within the same campus.
-The platform ensures **authenticity and security** by verifying users through **College ID Card Upload + OTP Verification**.
-
-This project is built using a **Microservices Architecture** with Spring Boot and modern web technologies.
+A **college-based private social networking platform** built with microservices architecture. Students connect, share, and communicate within verified campus communities.
 
 ---
 
-## 🎯 Problem Statement
+## ✨ Features
 
-Existing social platforms allow anyone to join, leading to fake profiles and irrelevant connections.
-Campus Connect solves this by creating **verified, college-specific communities**.
+### Core
+- **JWT Authentication** — Secure signup/login with email OTP verification
+- **College-Specific Feed** — Posts visible only to your campus community
+- **Real-Time Messaging** — WebSocket-powered chat with typing indicators
+- **Connection System** — Send/accept/reject friend requests with notifications
+- **Profile Management** — Bio, skills, interests, profile photo upload
+- **Dark/Light Theme** — Persistent theme with smooth toggle animation
 
----
+### Dashboard Sections
+| Section | Description |
+|---------|-------------|
+| Home Feed | Create posts, like, comment, infinite scroll |
+| My College | Directory of verified students at your college |
+| Explore | Discover posts and colleges across the platform |
+| Trending | Top hashtags and hot discussions |
+| Messages | Real-time chat with typing indicators |
+| Saved Posts | Bookmarked posts for later reading |
+| Profile | Edit bio, skills, upload photo, view stats |
+| Settings | Account, notifications, privacy, appearance |
 
-## 💡 Key Features
-
-* 👤 User Authentication (Signup/Login)
-* 🏫 College Selection System
-* 🆔 College ID Card Verification
-* 📩 Email OTP Verification
-* 🔐 Secure Access (Only Verified Users)
-* 📰 Feed System (Posts & Likes) *(Upcoming)*
-* 🤝 Connection System *(Upcoming)*
+### Backend
+- Microservices architecture with service discovery (Eureka)
+- API Gateway with load-balanced routing
+- JWT validation on all protected endpoints
+- Real-time notifications (like, comment, connection events)
+- File upload for images (posts + profile photos)
+- WebSocket messaging with STOMP/SockJS
 
 ---
 
 ## 🏗️ Architecture
 
-The system follows a **Microservices Architecture**, where each service is independently developed and scalable.
-
-### 🔹 Backend Services:
-
-* **User Service** → Authentication, User Management, Verification
-* **Discovery Server** → Service Registry (Eureka)
-* **API Gateway** → Routing & Security (Planned)
-* **Notification Service** → OTP & Email (Planned)
+```
+┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
+│   Frontend   │────▶│   API Gateway   │────▶│ Discovery Server │
+│  React+Vite  │     │   (Port 8095)   │     │  Eureka (8761)   │
+│  (Port 5173) │     └────────┬────────┘     └──────────────────┘
+└──────────────┘              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+          ┌─────────────────┐  ┌─────────────────┐
+          │  User Service   │  │  Post Service   │
+          │   (Port 8081)   │  │   (Port 8082)   │
+          │  Auth, Messaging│  │  Posts, Comments │
+          │  Connections    │  │  Likes, Upload   │
+          └────────┬────────┘  └────────┬────────┘
+                   │                    │
+                   ▼                    ▼
+          ┌─────────────────────────────────────┐
+          │          PostgreSQL Database         │
+          │          (campus-connect)            │
+          └─────────────────────────────────────┘
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-### 🔹 Backend
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite 8, Tailwind CSS 4, Zustand, Framer Motion |
+| Backend | Java 17, Spring Boot 4.0.5, Spring Security, Spring Cloud |
+| Database | PostgreSQL |
+| Messaging | WebSocket (STOMP + SockJS) |
+| Service Discovery | Netflix Eureka |
+| Gateway | Spring Cloud Gateway |
+| Auth | JWT (jjwt 0.11.5) |
+| DevOps | Docker, Docker Compose |
 
-* Java 21
-* Spring Boot
-* Spring Security
-* Spring Cloud
-* Hibernate / JPA
+---
 
-### 🔹 Microservices
+## 🚀 Getting Started
 
-* Eureka Server
-* Spring Cloud Gateway
+### Prerequisites
+- Java 17+
+- Node.js 18+
+- PostgreSQL 14+
+- Maven 3.8+
 
-### 🔹 Database
+### Option 1: Docker (Recommended)
 
-* PostgreSQL
+```bash
+# Clone the repository
+git clone https://github.com/maa101-hub/campus-connect.git
+cd campus-connect
 
-### 🔹 Frontend
+# Create .env file from example
+cp .env.example .env
+# Edit .env with your values (DB password, mail config, JWT secret)
 
-* React + Vite
+# Start all services
+docker compose up --build
 
-### 🔹 DevOps (Future)
+# Access:
+# Frontend: http://localhost:3000
+# API Gateway: http://localhost:8095
+# Eureka Dashboard: http://localhost:8761
+```
 
-* Docker
-* Kubernetes
+### Option 2: Manual Setup
+
+#### 1. Database
+```bash
+# Create PostgreSQL database
+createdb campus-connect
+```
+
+#### 2. Environment Variables
+```bash
+cp .env.example .env
+# Edit .env with your actual values
+```
+
+#### 3. Backend Services (start in order)
+
+```bash
+# Terminal 1 - Discovery Server
+cd backend/discovery-server
+./mvnw spring-boot:run
+
+# Terminal 2 - User Service
+cd backend/user-service
+./mvnw spring-boot:run
+
+# Terminal 3 - Post Service
+cd backend/post-service
+./mvnw spring-boot:run
+
+# Terminal 4 - API Gateway
+cd backend/api-gateway
+./mvnw spring-boot:run
+```
+
+#### 4. Frontend
+```bash
+cd frontend/campusconnect
+npm install
+npm run dev
+# Open http://localhost:5173
+```
 
 ---
 
@@ -75,66 +153,125 @@ The system follows a **Microservices Architecture**, where each service is indep
 
 ```
 campus-connect/
- ├── backend/
- │    ├── user-service/
- │    ├── discovery-server/
- │    └── api-gateway/
- │
- ├── frontend/
- │
- ├── docs/
- │
- └── README.md
+├── backend/
+│   ├── api-gateway/          # Spring Cloud Gateway (port 8095)
+│   ├── discovery-server/     # Eureka Server (port 8761)
+│   ├── user-service/         # Auth, Users, Messaging, Connections (port 8081)
+│   └── post-service/         # Posts, Comments, Likes (port 8082)
+├── frontend/
+│   └── campusconnect/        # React + Vite SPA
+├── docker-compose.yml        # Full-stack Docker setup
+├── .env.example              # Environment variables template
+└── README.md
 ```
 
 ---
 
-## 🔄 User Flow
+## 🔐 Security
 
-1. User selects their college
-2. Signs up with basic details
-3. Uploads **College ID Card**
-4. Verifies email via OTP
-5. Account status → **Pending Verification**
-6. Admin reviews ID card
-7. Access granted after approval
+- All secrets are stored in environment variables (never committed)
+- JWT authentication on both user-service and post-service
+- CORS configured for frontend origin only
+- Passwords hashed with BCrypt
+- File upload size limits enforced (5MB profile, 10MB posts)
 
 ---
 
-## 🔐 Verification Logic
+## 📡 API Endpoints
 
-* Only users with valid college ID cards are approved
-* Unverified users cannot:
+### Auth (`/api/auth`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/signup` | Register new user |
+| POST | `/login` | Login, returns JWT |
+| POST | `/verify-otp` | Verify email OTP |
+| POST | `/forgot-password` | Request password reset |
+| POST | `/reset-password` | Reset with OTP |
 
-  * Access feed
-  * Connect with others
-  * Post content
+### User (`/api/user`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/me` | Get current user profile |
+| PUT | `/profile` | Update profile info |
+| POST | `/profile-photo` | Upload profile photo |
+| GET | `/college?collegeName=` | List college students |
+
+### Posts (`/api/posts`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/` | Create post |
+| GET | `/feed` | Global feed (paginated) |
+| GET | `/feed/college` | College-specific feed |
+| POST | `/{id}/like` | Toggle like |
+| POST | `/{id}/comments` | Add comment |
+| GET | `/{id}/comments` | Get comments |
+
+### Messages (`/api/messages`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/send` | Send message |
+| GET | `/conversation/{userId}` | Get chat history |
+| GET | `/contacts` | Get message contacts |
+
+### Connections (`/api/connections`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/request` | Send connection request |
+| POST | `/{id}/accept` | Accept request |
+| POST | `/{id}/reject` | Reject request |
+| GET | `/pending` | Pending requests |
+| GET | `/friends` | Connected users |
+| GET | `/status` | Check connection status |
+
+### Notifications (`/api/notifications`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/?userId=` | Get all notifications |
+| GET | `/unread-count?userId=` | Unread count |
+| POST | `/mark-all-read?userId=` | Mark all read |
 
 ---
 
-## 📅 Development Approach
+## 🔄 WebSocket Events
 
-* Built with **daily GitHub commits**
-* Follows **feature-based Git workflow**
-* Designed for scalability and real-world system design
-
----
-
-## 🔥 Unique Selling Point (USP)
-
-* Strong **student verification system**
-* **College-specific private networks**
-* Real-world **microservices architecture implementation**
+| Topic | Direction | Description |
+|-------|-----------|-------------|
+| `/topic/messages/{userId}` | Server → Client | New message received |
+| `/topic/typing/{userId}` | Server → Client | Typing indicator |
+| `/app/typing` | Client → Server | Send typing status |
 
 ---
 
-## 🚀 Future Enhancements
+## 🐳 Docker Services
 
-* 📡 Real-time Chat System
-* 📊 Recommendation System
-* ☁️ Cloud Deployment (AWS)
-* 🐳 Docker & Kubernetes
-* 📈 Analytics Dashboard
+| Service | Port | Description |
+|---------|------|-------------|
+| postgres | 5432 | PostgreSQL database |
+| discovery-server | 8761 | Eureka service registry |
+| api-gateway | 8095 | API Gateway + CORS |
+| user-service | 8081 | Users, Auth, Messaging |
+| post-service | 8082 | Posts, Comments, Likes |
+| frontend | 3000 | React app (Nginx) |
+
+---
+
+## 🗺️ Roadmap
+
+- [x] User Authentication (JWT + OTP)
+- [x] Post Feed with Like/Comment
+- [x] Real-time Messaging (WebSocket)
+- [x] Connection/Friend System
+- [x] Notification System
+- [x] Profile Photo Upload
+- [x] Typing Indicators
+- [x] Docker Deployment
+- [x] Search (Posts + People)
+- [x] Settings Page
+- [ ] Group Chat
+- [ ] Events & Campus Groups
+- [ ] Cloud Deployment (AWS/GCP)
+- [ ] Push Notifications (Firebase)
+- [ ] Admin Panel for ID Verification
 
 ---
 
@@ -146,8 +283,8 @@ campus-connect/
 
 ## ⭐ Support
 
-If you like this project, give it a ⭐ on GitHub!
+If you like this project, give it a star on GitHub!
 
 ---
 
-🚀 *Building something impactful, one commit at a time.*
+*Building something impactful, one commit at a time.*

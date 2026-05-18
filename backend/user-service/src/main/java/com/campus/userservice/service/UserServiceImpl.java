@@ -195,7 +195,20 @@ public class UserServiceImpl implements UserService {
 		r.setYearOfStudy(user.getYearOfStudy());
 		r.setSkills(user.getSkills());
 		r.setInterests(user.getInterests());
+		r.setProfilePhotoUrl(user.getProfilePhotoUrl());
+		r.setFollowerCount(user.getFollowerCount());
+		r.setFollowingCount(user.getFollowingCount());
 		return r;
+	}
+
+	// Helper methods for profile photo upload
+	public User getUserByEmail(String email) {
+		return userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+	}
+
+	public User saveUser(User user) {
+		return userRepository.save(user);
 	}
 
 	private MessageResponse mapToMessageResponse(Message m) {

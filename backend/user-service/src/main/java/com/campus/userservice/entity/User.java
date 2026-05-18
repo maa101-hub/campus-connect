@@ -51,6 +51,7 @@ public class User {
     private String yearOfStudy;
     private String skills;
     private String interests;
+    private String profilePhotoUrl;
 
     // Social counts (updated when connections change)
     @Column(columnDefinition = "integer default 0")

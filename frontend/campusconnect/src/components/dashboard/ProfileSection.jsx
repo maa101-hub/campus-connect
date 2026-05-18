@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, GraduationCap, Calendar, Edit3, Settings, Grid, 
   Bookmark, MessageSquare, Heart, X, Check, Award, Briefcase, 
-  Code, Coffee, Globe
+  Code, Coffee, Globe, Camera
 } from 'lucide-react';
 import postService from '../../api/postService';
 import userService from '../../api/userService';
@@ -17,8 +17,10 @@ const ProfileSection = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const updateUserStore = useAuthStore(state => state.updateUser);
   const toast = useToast();
+  const photoInputRef = useRef(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -57,6 +59,34 @@ const ProfileSection = ({ user }) => {
     }
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const res = await userService.uploadProfilePhoto(file);
+      if (res.success) {
+        updateUserStore({ profilePhotoUrl: res.data });
+        toast.success('Profile photo updated!');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const stats = [
     { label: 'Posts', value: posts.length, icon: <Grid size={16} /> },
     { label: 'Followers', value: user?.followerCount ?? 0, icon: <User size={16} /> },
@@ -82,14 +112,49 @@ const ProfileSection = ({ user }) => {
           position: 'absolute', bottom: -60, left: 40,
           display: 'flex', alignItems: 'flex-end', gap: 20
         }}>
-          <div style={{
-            width: 120, height: 120, borderRadius: 32,
-            background: 'var(--bg-primary)', border: '6px solid var(--bg-primary)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 48, fontWeight: 800, color: 'var(--accent)'
-          }}>
-            {user?.name?.charAt(0).toUpperCase()}
+          <div 
+            onClick={() => photoInputRef.current?.click()}
+            style={{
+              width: 120, height: 120, borderRadius: 32,
+              background: 'var(--bg-primary)', border: '6px solid var(--bg-primary)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 48, fontWeight: 800, color: 'var(--accent)',
+              cursor: 'pointer', position: 'relative', overflow: 'hidden'
+            }}
+          >
+            {user?.profilePhotoUrl ? (
+              <img 
+                src={`http://localhost:8095${user.profilePhotoUrl}`} 
+                alt={user.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 26 }}
+              />
+            ) : (
+              user?.name?.charAt(0).toUpperCase()
+            )}
+            {/* Camera overlay */}
+            <div style={{
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: uploadingPhoto ? 1 : 0, transition: 'opacity 0.2s',
+              borderRadius: 26
+            }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => { if (!uploadingPhoto) e.currentTarget.style.opacity = 0; }}
+            >
+              {uploadingPhoto ? (
+                <div style={{ width: 24, height: 24, border: '3px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Camera size={24} color="#fff" />
+              )}
+            </div>
+            <input 
+              ref={photoInputRef}
+              type="file" 
+              accept="image/*" 
+              onChange={handlePhotoUpload}
+              style={{ display: 'none' }} 
+            />
           </div>
           <div style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

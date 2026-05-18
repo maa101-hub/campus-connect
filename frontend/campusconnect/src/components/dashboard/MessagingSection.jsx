@@ -13,9 +13,11 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
   const [newMessage, setNewMessage] = useState('');
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const stompClientRef = useRef(null);
   const activeChatRef = useRef(activeChat);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -37,6 +39,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Connected to WebSocket');
+        // Subscribe to messages
         stompClient.subscribe(`/topic/messages/${user.id}`, (msg) => {
           if (msg.body) {
             const incomingMessage = JSON.parse(msg.body);
@@ -51,6 +54,22 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
             }
           }
         });
+
+        // Subscribe to typing indicators
+        stompClient.subscribe(`/topic/typing/${user.id}`, (msg) => {
+          if (msg.body) {
+            const typingData = JSON.parse(msg.body);
+            // Show typing only if it's from the active chat partner
+            if (activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
+              setIsTyping(typingData.typing === true);
+              // Auto-clear typing after 3s as fallback
+              if (typingData.typing) {
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+              }
+            }
+          }
+        });
       },
     });
 
@@ -59,6 +78,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
 
     return () => {
       stompClient.deactivate();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [user.id]);
 
@@ -99,9 +119,45 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     }
   };
 
+  // ─── Typing Indicator Logic ───────────────────────────────
+  const typingSentRef = useRef(false);
+  const typingDebounceRef = useRef(null);
+
+  const sendTypingEvent = (typing) => {
+    if (!stompClientRef.current?.connected || !activeChat) return;
+    stompClientRef.current.publish({
+      destination: '/app/typing',
+      body: JSON.stringify({
+        senderId: user.id,
+        recipientId: activeChat.id,
+        typing: typing,
+      }),
+    });
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+
+    // Send "typing" event (debounced)
+    if (!typingSentRef.current) {
+      sendTypingEvent(true);
+      typingSentRef.current = true;
+    }
+
+    // Reset typing after 1.5s of no input
+    if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+    typingDebounceRef.current = setTimeout(() => {
+      sendTypingEvent(false);
+      typingSentRef.current = false;
+    }, 1500);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat) return;
+
+    // Send stop typing when sending message
+    sendTypingEvent(false);
 
     const content = newMessage.trim();
     setNewMessage('');
@@ -205,7 +261,9 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                 </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{activeChat.name}</h4>
-                  <p style={{ margin: 0, fontSize: 11, color: '#22C55E' }}>Online</p>
+                  <p style={{ margin: 0, fontSize: 11, color: isTyping ? 'var(--accent)' : '#22C55E', fontWeight: isTyping ? 600 : 400 }}>
+                    {isTyping ? 'typing...' : 'Online'}
+                  </p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)' }}>
@@ -247,6 +305,21 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                   );
                 })
               )}
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div style={{ 
+                  display: 'flex', justifyContent: 'flex-start', marginBottom: 4
+                }}>
+                  <div style={{ 
+                    padding: '10px 16px', borderRadius: 16, borderBottomLeftRadius: 4,
+                    background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', gap: 4
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0s' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0.2s' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: 'typingBounce 1.4s infinite', animationDelay: '0.4s' }} />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -260,7 +333,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
               <div style={{ flex: 1, position: 'relative' }}>
                 <input 
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleInputChange}
                   placeholder="Type a message..."
                   style={{ 
                     width: '100%', padding: '12px 16px', borderRadius: 12,

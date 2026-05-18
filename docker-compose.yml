@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # ─── Database ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: campus-postgres
+    environment:
+      POSTGRES_DB: campus-connect
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - campus-network
+
+  # ─── Discovery Server (Eureka) ────────────────────────────
+  discovery-server:
+    build: ./backend/discovery-server
+    container_name: campus-discovery
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - campus-network
+
+  # ─── API Gateway ──────────────────────────────────────────
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: campus-gateway
+    ports:
+      - "8095:8095"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      FRONTEND_URL: http://localhost:3000
+      API_GATEWAY_PORT: 8095
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - campus-network
+
+  # ─── User Service ─────────────────────────────────────────
+  user-service:
+    build: ./backend/user-service
+    container_name: campus-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus-connect
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DockerDevSecretKey_ChangeInProduction_32chars}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      USER_SERVICE_PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    volumes:
+      - user_uploads:/app/uploads
+    networks:
+      - campus-network
+
+  # ─── Post Service ─────────────────────────────────────────
+  post-service:
+    build: ./backend/post-service
+    container_name: campus-post-service
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus-connect
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DockerDevSecretKey_ChangeInProduction_32chars}
+      POST_SERVICE_PORT: 8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    volumes:
+      - post_uploads:/app/uploads
+    networks:
+      - campus-network
+
+  # ─── Frontend (React + Nginx) ─────────────────────────────
+  frontend:
+    build: ./frontend/campusconnect
+    container_name: campus-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - campus-network
+
+volumes:
+  postgres_data:
+  user_uploads:
+  post_uploads:
+
+networks:
+  campus-network:
+    driver: bridge

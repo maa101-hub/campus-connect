@@ -24,4 +24,9 @@ public class UserResponse {
     private String yearOfStudy;
     private String skills;
     private String interests;
+    private String profilePhotoUrl;
+    
+    // Social counts
+    private Integer followerCount;
+    private Integer followingCount;
 }
