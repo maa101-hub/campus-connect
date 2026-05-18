@@ -31,6 +31,8 @@ public class SecurityConfig {
                 // Allow reading feeds without auth (public feed)
                 .requestMatchers(HttpMethod.GET, "/api/posts/feed/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts/{postId}/comments").permitAll()
+                // Allow serving uploaded images without auth (used in <img> tags)
+                .requestMatchers(HttpMethod.GET, "/api/posts/upload/files/**").permitAll()
                 // All write operations require authentication
                 .anyRequest().authenticated()
         );

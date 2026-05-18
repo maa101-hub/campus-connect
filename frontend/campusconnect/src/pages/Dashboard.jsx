@@ -27,6 +27,11 @@ const Dashboard = () => {
 
   useEffect(() => { initTheme(); }, [initTheme]);
 
+  // Scroll to top when switching sections
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeNav]);
+
   const handleLogout = () => {
     logout();
     navigate('/');

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import messageService from '../../api/messageService';
+import EmojiPicker from '../ui/EmojiPicker';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
@@ -43,6 +44,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isTyping, setIsTyping] = useState(false);    // other user is typing
   const [searchQuery, setSearchQuery] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const messagesEndRef = useRef(null);
   const stompClientRef = useRef(null);
@@ -487,8 +489,16 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                   />
                   <Smile size={18} style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)', cursor: 'pointer',
-                  }} />
+                    color: showEmojiPicker ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
+                  }} onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <EmojiPicker
+                        onSelect={(emoji) => setNewMessage(prev => prev + emoji)}
+                        onClose={() => setShowEmojiPicker(false)}
+                      />
+                    )}
+                  </AnimatePresence>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.08 }}

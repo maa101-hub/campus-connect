@@ -47,7 +47,15 @@ public class FileUploadController {
     @GetMapping("/files/{fileName}")
     public ResponseEntity<byte[]> getFile(@PathVariable String fileName) throws IOException {
         Path path = Paths.get(uploadDir + fileName);
+        if (!Files.exists(path)) {
+            return ResponseEntity.notFound().build();
+        }
         byte[] image = Files.readAllBytes(path);
-        return ResponseEntity.ok(image);
+        String contentType = Files.probeContentType(path);
+        if (contentType == null) contentType = "application/octet-stream";
+        return ResponseEntity.ok()
+                .header("Content-Type", contentType)
+                .header("Cache-Control", "public, max-age=86400")
+                .body(image);
     }
 }

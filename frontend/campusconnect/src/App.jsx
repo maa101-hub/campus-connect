@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CampusConnectHero from './components/CampusConnectHero';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 import useAuthStore from './store/authStore';
 import { ToastProvider } from './components/ui/Toast';
 
@@ -100,6 +101,7 @@ function App() {
                   isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
                 } 
               />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

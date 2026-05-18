@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader, Link2, Copy } from 'lucide-react';
 import postService from '../../api/postService';
+import { useToast } from '../ui/Toast';
 
 // Helper: time ago
 const timeAgo = (dateStr) => {
@@ -50,8 +51,33 @@ const PostCard = ({ post, index, user }) => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
+  const toast = useToast();
 
   const initials = (post.username || 'U').slice(0, 2).toUpperCase();
+
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/dashboard?post=${post.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post by ${post.username}`,
+          text: post.content?.slice(0, 100),
+          url: postUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(postUrl);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (err) {
+      // User cancelled share or clipboard failed
+      try {
+        await navigator.clipboard.writeText(postUrl);
+        toast.success('Link copied to clipboard!');
+      } catch (e) {
+        toast.error('Failed to copy link');
+      }
+    }
+  };
 
   const handleLike = async () => {
     if (!user?.id) return;
@@ -151,7 +177,7 @@ const PostCard = ({ post, index, user }) => {
         <button className={`post-action-btn ${showComments ? 'active' : ''}`} onClick={toggleComments}>
           <MessageCircle size={17} /> Comment
         </button>
-        <button className="post-action-btn">
+        <button className="post-action-btn" onClick={handleShare}>
           <Share2 size={17} /> Share
         </button>
         <motion.button

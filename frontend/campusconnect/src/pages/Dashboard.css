@@ -484,3 +484,52 @@
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-4px); }
 }
+
+
+/* ─── Focus states for accessibility ─── */
+.sidebar-nav-item:focus-visible,
+.post-action-btn:focus-visible,
+.nav-icon-btn:focus-visible,
+.theme-toggle:focus-visible,
+.connect-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ─── Smooth transitions on section change ─── */
+.dash-feed {
+  scroll-behavior: smooth;
+}
+
+/* ─── Better hover on post cards ─── */
+.post-card {
+  will-change: transform;
+}
+
+/* ─── Input focus glow ─── */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+/* ─── Auth input style (used in modals) ─── */
+.auth-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* ─── Selection color ─── */
+::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: var(--text-primary);
+}
