@@ -65,7 +65,8 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     fetchContacts();
 
     const token = localStorage.getItem('token');
-    const socket = new SockJS(`http://localhost:8095/ws?token=${token}`);
+    // Connect WebSocket directly to user-service (not through gateway) to avoid duplicate CORS headers
+    const socket = new SockJS(`http://localhost:8081/ws?token=${token}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
