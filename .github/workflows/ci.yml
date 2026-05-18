@@ -44,6 +44,7 @@ jobs:
   # ─── Discovery Server Build ───────────────────────────────
   discovery-server:
     name: Discovery Server Build
+    
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -79,7 +80,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
-
+      - name: Give execute permission to mvnw
+        run: chmod +x mvnw
       - name: Build with Maven
         run: ./mvnw package -DskipTests -B
 
