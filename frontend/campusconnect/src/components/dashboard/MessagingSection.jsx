@@ -59,6 +59,14 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
         stompClient.subscribe(`/topic/typing/${user.id}`, (msg) => {
           if (msg.body) {
             const typingData = JSON.parse(msg.body);
+            // Handle read receipt
+            if (typingData.readReceipt && activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
+              // Mark all our sent messages as read
+              setMessages(prev => prev.map(m => 
+                m.senderId === user.id ? { ...m, isRead: true, read: true } : m
+              ));
+              return;
+            }
             // Show typing only if it's from the active chat partner
             if (activeChatRef.current && activeChatRef.current.id === typingData.senderId) {
               setIsTyping(typingData.typing === true);
@@ -107,10 +115,23 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     try {
       const res = await messageService.getConversation(otherUserId);
       if (res.success) {
-        // Only update if message count changed to avoid flickering
-        if (res.data.length !== messages.length) {
+        if (res.data.length !== messages.length || !isPolling) {
           setMessages(res.data);
         }
+      }
+      // Mark messages from this user as read
+      await messageService.markAsRead(otherUserId);
+      // Notify sender that messages were read via WebSocket
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.publish({
+          destination: '/app/typing',
+          body: JSON.stringify({
+            senderId: user.id,
+            recipientId: otherUserId,
+            typing: false,
+            readReceipt: true,
+          }),
+        });
       }
     } catch (err) {
       console.error('Failed to fetch conversation:', err);
@@ -281,7 +302,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                 messages.map((m, i) => {
                   const isMe = m.senderId === user.id;
                   return (
-                    <div key={m.id} style={{ 
+                    <div key={m.id || i} style={{ 
                       display: 'flex', 
                       justifyContent: isMe ? 'flex-end' : 'flex-start' 
                     }}>
@@ -296,9 +317,23 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                         {m.content}
                         <div style={{ 
                           fontSize: 10, marginTop: 4, textAlign: 'right',
-                          opacity: 0.7 
+                          opacity: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4
                         }}>
                           {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {isMe && (
+                            <span style={{ display: 'inline-flex', marginLeft: 2 }}>
+                              {m.read || m.isRead ? (
+                                <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+                                  <path d="M1 5l3 3 5-6" stroke={m.read || m.isRead ? '#34D399' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M5 5l3 3 5-6" stroke={m.read || m.isRead ? '#34D399' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              ) : (
+                                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                                  <path d="M1 5l3 3 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+                                </svg>
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

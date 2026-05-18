@@ -10,6 +10,7 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [connectionStatuses, setConnectionStatuses] = useState({});
+  const [connectionIds, setConnectionIds] = useState({});
   const [pendingActions, setPendingActions] = useState({});
   const toast = useToast();
 
@@ -26,7 +27,6 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
       if (res.success) {
         const otherUsers = res.data.filter(u => u.id !== user.id);
         setUsers(otherUsers);
-        // Fetch connection status for each user
         fetchAllStatuses(otherUsers);
       }
     } catch (err) {
@@ -38,17 +38,20 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
 
   const fetchAllStatuses = async (usersList) => {
     const statuses = {};
+    const ids = {};
     for (const u of usersList) {
       try {
         const res = await connectionService.getStatus(user.id, u.id);
         if (res.success) {
           statuses[u.id] = res.data.status;
+          ids[u.id] = res.data.connectionId;
         }
       } catch (err) {
         statuses[u.id] = 'NONE';
       }
     }
     setConnectionStatuses(statuses);
+    setConnectionIds(ids);
   };
 
   const handleConnect = async (targetUserId) => {
@@ -56,6 +59,7 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
     try {
       const res = await connectionService.sendRequest(user.id, targetUserId);
       if (res.success) {
+        // Instant UI update
         setConnectionStatuses(prev => ({ ...prev, [targetUserId]: 'PENDING_SENT' }));
         toast.success('Connection request sent!');
       } else {
@@ -65,6 +69,38 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
       toast.error(err.message || 'Failed to send request');
     } finally {
       setPendingActions(prev => ({ ...prev, [targetUserId]: false }));
+    }
+  };
+
+  const handleAccept = async (targetUserId) => {
+    const connId = connectionIds[targetUserId];
+    if (!connId) {
+      toast.error('Connection ID not found');
+      return;
+    }
+    setPendingActions(prev => ({ ...prev, [targetUserId]: true }));
+    try {
+      const res = await connectionService.acceptRequest(connId, user.id);
+      if (res.success) {
+        // Instant UI update
+        setConnectionStatuses(prev => ({ ...prev, [targetUserId]: 'ACCEPTED' }));
+        toast.success('Connection accepted!');
+      } else {
+        toast.error(res.message || 'Failed to accept');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to accept');
+    } finally {
+      setPendingActions(prev => ({ ...prev, [targetUserId]: false }));
+    }
+  };
+
+  const handleButtonClick = (targetUserId) => {
+    const status = connectionStatuses[targetUserId];
+    if (status === 'PENDING_RECEIVED') {
+      handleAccept(targetUserId);
+    } else {
+      handleConnect(targetUserId);
     }
   };
 
@@ -179,7 +215,7 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
                   <motion.button
                     whileHover={!btnConfig.disabled ? { scale: 1.02 } : {}}
                     whileTap={!btnConfig.disabled ? { scale: 0.98 } : {}}
-                    onClick={() => !btnConfig.disabled && handleConnect(u.id)}
+                    onClick={() => !btnConfig.disabled && handleButtonClick(u.id)}
                     disabled={btnConfig.disabled || isPending}
                     style={{ 
                       flex: 1, padding: '9px 0', borderRadius: 10, 

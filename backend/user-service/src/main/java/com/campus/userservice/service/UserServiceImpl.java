@@ -225,7 +225,15 @@ public class UserServiceImpl implements UserService {
 		r.setSenderId(m.getSenderId());
 		r.setRecipientId(m.getRecipientId());
 		r.setContent(m.getContent());
+		r.setRead(m.isRead());
 		r.setTimestamp(m.getTimestamp());
 		return r;
+	}
+
+	@org.springframework.transaction.annotation.Transactional
+	public void markMessagesAsRead(String email, Long senderId) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new BadRequestException("User not found"));
+		messageRepository.markMessagesAsRead(senderId, user.getId());
 	}
 }
