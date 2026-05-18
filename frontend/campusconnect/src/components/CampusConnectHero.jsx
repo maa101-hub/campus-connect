@@ -5,6 +5,7 @@ import HeroSection from './sections/HeroSection';
 import CommunitySection from './sections/CommunitySection';
 import ContactSection from './sections/ContactSection';
 import AboutSection from './sections/AboutSection';
+import StatsSection from './sections/StatsSection';
 import SignupSection from './sections/SignupSection';
 
 /**
@@ -14,6 +15,7 @@ import SignupSection from './sections/SignupSection';
  *  • Navbar  (fixed, scroll-aware)
  *  • HeroSection — "Get Started" opens signup overlay
  *  • AboutSection — Story and mission
+ *  • StatsSection — Animated counters + testimonials
  *  • CommunitySection — Live feed and cards
  *  • ContactSection — Get in touch
  *  • Footer — Site links and credits
@@ -34,6 +36,7 @@ const CampusConnectHero = () => {
       
       <HeroSection onOpenSignup={() => setShowSignup(true)} />
       <AboutSection />
+      <StatsSection />
       <CommunitySection />
       <ContactSection />
       

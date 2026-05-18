@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Home, Building2, Compass, Bookmark, UserCircle, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { Home, Building2, Compass, Bookmark, UserCircle, Settings, LogOut, TrendingUp, Calendar } from 'lucide-react';
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Home Feed' },
   { id: 'college', icon: Building2, label: 'My College' },
+  { id: 'events', icon: Calendar, label: 'Events' },
   { id: 'explore', icon: Compass, label: 'Explore' },
   { id: 'trending', icon: TrendingUp, label: 'Trending' },
   { id: 'saved', icon: Bookmark, label: 'Saved Posts' },

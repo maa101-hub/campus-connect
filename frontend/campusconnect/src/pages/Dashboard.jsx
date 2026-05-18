@@ -15,6 +15,7 @@ import ExploreSection from '../components/dashboard/ExploreSection';
 import TrendingSection from '../components/dashboard/TrendingSection';
 import SavedPostsSection from '../components/dashboard/SavedPostsSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
+import EventsSection from '../components/dashboard/EventsSection';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -46,6 +47,8 @@ const Dashboard = () => {
         return <ProfileSection user={user} />;
       case 'explore':
         return <ExploreSection user={user} />;
+      case 'events':
+        return <EventsSection user={user} />;
       case 'trending':
         return <TrendingSection />;
       case 'saved':

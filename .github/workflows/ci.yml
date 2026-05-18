@@ -1,0 +1,138 @@
+name: Campus Connect CI
+
+on:
+  push:
+    branches: [main, feature/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── Frontend Build & Lint ────────────────────────────────
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/campusconnect
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/campusconnect/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint || true
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/campusconnect/dist
+          retention-days: 7
+
+  # ─── Discovery Server Build ───────────────────────────────
+  discovery-server:
+    name: Discovery Server Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/discovery-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw package -DskipTests -B
+
+  # ─── User Service Build ───────────────────────────────────
+  user-service:
+    name: User Service Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/user-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw package -DskipTests -B
+
+  # ─── Post Service Build ───────────────────────────────────
+  post-service:
+    name: Post Service Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/post-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw package -DskipTests -B
+
+  # ─── API Gateway Build ────────────────────────────────────
+  api-gateway:
+    name: API Gateway Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/api-gateway
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw package -DskipTests -B
+
+  # ─── Docker Build Check ───────────────────────────────────
+  docker:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    needs: [frontend, discovery-server, user-service, post-service, api-gateway]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
