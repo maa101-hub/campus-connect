@@ -25,22 +25,11 @@
 
 ---
 
-## 📸 Screenshots
+## 📸 Preview
 
-<p align="center">
-  <img src="docs/screenshots/hero.png" alt="CampusConnect Landing Page" width="800" />
-</p>
+> **Landing Page:** Dark-themed, animated hero with gradient text, floating particles, and a marquee strip showcasing platform features. Built with Framer Motion + Tailwind CSS.
 
-<details>
-<summary><strong>View more screenshots</strong></summary>
-
-| Dashboard Feed | Messaging | Profile |
-|:-:|:-:|:-:|
-| ![Feed](docs/screenshots/feed.png) | ![Messages](docs/screenshots/messages.png) | ![Profile](docs/screenshots/profile.png) |
-
-</details>
-
-> **Note:** To add screenshots, run the app locally and save captures to `docs/screenshots/`.
+> To view the app locally, run `npm run dev` in `frontend/campusconnect/` and open http://localhost:5173
 
 ---
 
