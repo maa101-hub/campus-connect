@@ -27,10 +27,6 @@ const ExploreSection = ({ user }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchExplorePosts();
-  }, []);
-
   const fetchExplorePosts = async () => {
     setLoading(true);
     try {
@@ -44,6 +40,12 @@ const ExploreSection = ({ user }) => {
       setLoading(false);
     }
   };
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchExplorePosts();
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <motion.div

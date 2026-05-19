@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, MapPin, Users, Plus, X, Clock, Tag, 
-  CheckCircle, Loader, ChevronRight
+  Calendar, MapPin, Users, Plus, X, Clock, 
+  CheckCircle, Loader
 } from 'lucide-react';
 import eventService from '../../api/eventService';
 import { useToast } from '../ui/Toast';
@@ -26,18 +26,13 @@ const EventsSection = ({ user }) => {
   const [rsvpLoading, setRsvpLoading] = useState({});
   const toast = useToast();
 
-  useEffect(() => {
-    fetchEvents();
-    if (user?.id) fetchUserRsvps();
-  }, [user]);
-
   const fetchEvents = async () => {
     setLoading(true);
     try {
       const res = await eventService.getEvents(user?.collegeName);
       if (res.success) setEvents(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch events:', err);
+    } catch {
+      console.error('Failed to fetch events');
     } finally {
       setLoading(false);
     }
@@ -47,10 +42,17 @@ const EventsSection = ({ user }) => {
     try {
       const res = await eventService.getUserRsvps(user.id);
       if (res.success) setUserRsvps(res.data || []);
-    } catch (err) {
+    } catch {
       // silent
     }
   };
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchEvents();
+    if (user?.id) fetchUserRsvps();
+  }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRsvp = async (eventId) => {
     if (!user?.id) return;

@@ -8,7 +8,8 @@
             "mainClass": "com.campus.discovery_server.DiscoveryServerApplication",
             "projectName": "discovery-server",
             "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=51332 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=discovery-server"
         },
         {
             "type": "java",
@@ -17,6 +18,27 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.campus.userservice.UserServiceApplication",
             "projectName": "user-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=61002 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=user-service"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-PostServiceApplication<post-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.campus.postservice.PostServiceApplication",
+            "projectName": "post-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ApiGatewayApplication<api-gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.campus.api_gateway.ApiGatewayApplication",
+            "projectName": "api-gateway",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         }

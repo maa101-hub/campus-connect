@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Send, Search, Phone, Video, MoreVertical, Paperclip, Smile, MessageSquare, Check, CheckCheck } from 'lucide-react';
 import messageService from '../../api/messageService';
 import EmojiPicker from '../ui/EmojiPicker';
 import SockJS from 'sockjs-client';
@@ -62,7 +62,20 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
+  const fetchContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const res = await messageService.getContacts();
+      if (res.success) setContacts(res.data);
+    } catch (err) {
+      console.error('Failed to fetch contacts:', err);
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
   // ─── WebSocket Setup ──────────────────────────────────────────────────────────
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchContacts();
 
@@ -132,28 +145,7 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
       if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
     };
   }, [user.id]);
-
-  // ─── Load conversation when switching chats ──────────────────────────────────
-  useEffect(() => {
-    if (activeChat) {
-      setIsTyping(false);
-      fetchConversation(activeChat.id);
-    }
-  }, [activeChat]);
-
-  useEffect(scrollToBottom, [messages, isTyping]);
-
-  const fetchContacts = async () => {
-    setLoadingContacts(true);
-    try {
-      const res = await messageService.getContacts();
-      if (res.success) setContacts(res.data);
-    } catch (err) {
-      console.error('Failed to fetch contacts:', err);
-    } finally {
-      setLoadingContacts(false);
-    }
-  };
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const fetchConversation = async (otherUserId) => {
     setLoadingMessages(true);
@@ -170,6 +162,18 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
       setLoadingMessages(false);
     }
   };
+
+  // ─── Load conversation when switching chats ──────────────────────────────────
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (activeChat) {
+      setIsTyping(false);
+      fetchConversation(activeChat.id);
+    }
+  }, [activeChat]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(scrollToBottom, [messages, isTyping]);
 
   // ─── Typing indicator send ────────────────────────────────────────────────────
   const sendTypingEvent = useCallback((typing) => {

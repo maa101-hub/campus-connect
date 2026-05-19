@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import connectionService from '../../api/connectionService';
 import { useToast } from '../ui/Toast';
 
 const TRENDING = [
@@ -23,11 +22,13 @@ const SUGGESTIONS = [
   { name: 'Karthik R.', college: 'VIT Vellore', color: '#22C55E' },
 ];
 
+// eslint-disable-next-line no-unused-vars
 const RightSidebar = ({ user }) => {
+  // eslint-disable-next-line no-unused-vars
   const [connectedIds, setConnectedIds] = useState([]);
   const toast = useToast();
 
-  const handleConnect = async (suggestionName) => {
+  const handleConnect = async () => {
     // This is placeholder since suggestions are static — in real app would use user IDs
     toast.info(`Connection feature works from the Campus Directory page for real users.`);
   };

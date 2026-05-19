@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, UserPlus, MessageSquare, MapPin, Check, Clock, UserMinus } from 'lucide-react';
+import { Search, UserPlus, MessageSquare, MapPin, Check, Clock } from 'lucide-react';
 import userService from '../../api/userService';
 import connectionService from '../../api/connectionService';
 import { useToast } from '../ui/Toast';
@@ -14,28 +14,6 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
   const [pendingActions, setPendingActions] = useState({});
   const toast = useToast();
 
-  useEffect(() => {
-    if (user?.collegeName) {
-      fetchCollegeUsers();
-    }
-  }, [user]);
-
-  const fetchCollegeUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await userService.getCollegeUsers(user.collegeName);
-      if (res.success) {
-        const otherUsers = res.data.filter(u => u.id !== user.id);
-        setUsers(otherUsers);
-        fetchAllStatuses(otherUsers);
-      }
-    } catch (err) {
-      console.error('Failed to fetch college users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchAllStatuses = async (usersList) => {
     const statuses = {};
     const ids = {};
@@ -46,13 +24,37 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
           statuses[u.id] = res.data.status;
           ids[u.id] = res.data.connectionId;
         }
-      } catch (err) {
+      } catch {
         statuses[u.id] = 'NONE';
       }
     }
     setConnectionStatuses(statuses);
     setConnectionIds(ids);
   };
+
+  const fetchCollegeUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await userService.getCollegeUsers(user.collegeName);
+      if (res.success) {
+        const otherUsers = res.data.filter(u => u.id !== user.id);
+        setUsers(otherUsers);
+        fetchAllStatuses(otherUsers);
+      }
+    } catch {
+      console.error('Failed to fetch college users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (user?.collegeName) {
+      fetchCollegeUsers();
+    }
+  }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleConnect = async (targetUserId) => {
     setPendingActions(prev => ({ ...prev, [targetUserId]: true }));

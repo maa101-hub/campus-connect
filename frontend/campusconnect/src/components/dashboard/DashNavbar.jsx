@@ -24,26 +24,14 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
 
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
 
-  // Fetch notifications on mount and periodically
-  useEffect(() => {
-    if (user?.id) {
-      fetchNotifications();
-      fetchUnreadCount();
-      // Poll every 30 seconds for new notifications
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user?.id]);
-
   const fetchNotifications = async () => {
     if (!user?.id) return;
     setLoadingNotifs(true);
     try {
       const res = await notificationService.getNotifications(user.id);
       if (res.success) setNotifications(res.data || []);
-    } catch (err) {
+    } catch {
       // Silently fail — notifications are non-critical
-      console.error('Failed to fetch notifications:', err);
     } finally {
       setLoadingNotifs(false);
     }
@@ -54,10 +42,23 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
     try {
       const res = await notificationService.getUnreadCount(user.id);
       if (res.success) setUnreadCount(res.data?.count || 0);
-    } catch (err) {
+    } catch {
       // silent
     }
   };
+
+  // Fetch notifications on mount and periodically
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+      fetchUnreadCount();
+      // Poll every 30 seconds for new notifications
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleMarkAllRead = async () => {
     if (!user?.id) return;
@@ -129,7 +130,7 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
               u.username?.toLowerCase().includes(query.toLowerCase()) ||
               u.major?.toLowerCase().includes(query.toLowerCase())
             ).slice(0, 4);
-          } catch (err) {
+          } catch {
             // silently fail user search
           }
         }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Hash, Flame, ArrowUp, Clock, BarChart3 } from 'lucide-react';
+import { TrendingUp, Flame, ArrowUp, Clock, BarChart3 } from 'lucide-react';
 
 const TRENDING_TOPICS = [
   { tag: '#CampusHackathon2026', posts: 2340, growth: '+45%', category: 'Technology' },
