@@ -21,6 +21,22 @@ services:
     networks:
       - campus-network
 
+  # ─── Redis (Session + WebSocket + Caching) ────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - campus-network
+
   # ─── Discovery Server (Eureka) ────────────────────────────
   discovery-server:
     build: ./backend/discovery-server
@@ -48,6 +64,11 @@ services:
     depends_on:
       discovery-server:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8095/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
     networks:
       - campus-network
 
@@ -70,12 +91,22 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       USER_SERVICE_PORT: 8081
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       discovery-server:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     volumes:
       - user_uploads:/app/uploads
     networks:
@@ -95,12 +126,22 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       EUREKA_URL: http://discovery-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET:-DockerDevSecretKey_ChangeInProduction_32chars}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       POST_SERVICE_PORT: 8082
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       discovery-server:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     volumes:
       - post_uploads:/app/uploads
     networks:
@@ -113,12 +154,14 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     networks:
       - campus-network
 
 volumes:
   postgres_data:
+  redis_data:
   user_uploads:
   post_uploads:
 

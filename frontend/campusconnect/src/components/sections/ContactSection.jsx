@@ -2,13 +2,13 @@ import { useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import image4 from '../../assets/image4.png';
 
-const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 7 }, (_, i) => ({
   id: i,
-  x: `${(i * 6.8 + 4) % 100}%`,
-  y: `${(i * 7.5 + 6) % 90}%`,
+  x: `${(i * 13 + 4) % 95}%`,
+  y: `${(i * 12 + 6) % 85}%`,
   size: (i % 3) + 2,
-  duration: (i % 4) + 5,
-  delay: (i % 5) * 0.8,
+  duration: (i % 4) + 6,
+  delay: (i % 5) * 1,
   color: i % 3 === 0 ? '#9d4edd' : i % 3 === 1 ? '#ff6a00' : '#00c973',
 }));
 

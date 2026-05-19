@@ -3,9 +3,27 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  define: {
-    global: 'window',
-  },
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [react(), tailwindcss()],
+    define: {
+      global: 'window',
+    },
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8095',
+          changeOrigin: true,
+        },
+        '/ws': {
+          target: 'http://localhost:8095',
+          ws: true,
+        },
+      },
+    },
+    build: {
+      sourcemap: mode !== 'production',
+    },
+  }
 })

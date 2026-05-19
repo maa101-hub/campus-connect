@@ -67,13 +67,14 @@ A **college-based private social networking platform** built with microservices 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite 8, Tailwind CSS 4, Zustand, Framer Motion |
-| Backend | Java 17, Spring Boot 4.0.5, Spring Security, Spring Cloud |
-| Database | PostgreSQL |
+| Backend | Java 17, Spring Boot 3.3.5, Spring Security, Spring Cloud 2023.0.3 |
+| Database | PostgreSQL 16 |
+| Caching | Redis 7 |
 | Messaging | WebSocket (STOMP + SockJS) |
 | Service Discovery | Netflix Eureka |
 | Gateway | Spring Cloud Gateway |
 | Auth | JWT (jjwt 0.11.5) |
-| DevOps | Docker, Docker Compose |
+| DevOps | Docker, Docker Compose, GitHub Actions CI |
 
 ---
 
@@ -174,6 +175,12 @@ campus-connect/
 - CORS configured for frontend origin only
 - Passwords hashed with BCrypt
 - File upload size limits enforced (5MB profile, 10MB posts)
+- File type validation (only JPEG, PNG, GIF, WebP, MP4, WebM allowed)
+- Path traversal protection on file upload/download endpoints
+- Security headers via Nginx (X-Frame-Options, X-Content-Type-Options, XSS-Protection)
+- Rate limiting on API proxy (30 req/s per IP)
+- Actuator endpoints restricted to health, info, metrics only
+- Request size limits on API Gateway (10MB max)
 
 ---
 
@@ -246,12 +253,13 @@ campus-connect/
 
 | Service | Port | Description |
 |---------|------|-------------|
-| postgres | 5432 | PostgreSQL database |
+| postgres | 5432 | PostgreSQL 16 database |
+| redis | 6379 | Redis 7 (caching + sessions) |
 | discovery-server | 8761 | Eureka service registry |
 | api-gateway | 8095 | API Gateway + CORS |
 | user-service | 8081 | Users, Auth, Messaging |
 | post-service | 8082 | Posts, Comments, Likes |
-| frontend | 3000 | React app (Nginx) |
+| frontend | 3000 | React app (Nginx + security headers) |
 
 ---
 

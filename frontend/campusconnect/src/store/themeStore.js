@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 const useThemeStore = create((set) => ({
-  theme: localStorage.getItem('cc-theme') || 'light',
+  theme: localStorage.getItem('cc-theme') || 'dark',
   
   toggleTheme: () => set((state) => {
     const next = state.theme === 'light' ? 'dark' : 'light';
@@ -17,7 +17,7 @@ const useThemeStore = create((set) => ({
   },
 
   initTheme: () => {
-    const saved = localStorage.getItem('cc-theme') || 'light';
+    const saved = localStorage.getItem('cc-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
     set({ theme: saved });
   }

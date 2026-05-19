@@ -13,7 +13,6 @@
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
-    "figma-to-react": "^1.0.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.12.0",
     "react": "^19.2.5",

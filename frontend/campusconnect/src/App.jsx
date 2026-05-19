@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CampusConnectHero from './components/CampusConnectHero';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import useAuthStore from './store/authStore';
 import { ToastProvider } from './components/ui/Toast';
 
@@ -83,30 +84,32 @@ function App() {
   }
 
   return (
-    <ToastProvider>
-      <Router>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key="app"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            style={{ width: '100%', minHeight: '100vh' }}
-          >
-            <Routes>
-              <Route path="/" element={<CampusConnectHero />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
-                } 
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
-      </Router>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <Router>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="app"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              style={{ width: '100%', minHeight: '100vh' }}
+            >
+              <Routes>
+                <Route path="/" element={<CampusConnectHero />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </Router>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

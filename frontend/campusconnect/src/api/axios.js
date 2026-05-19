@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // Update this with your actual API Gateway URL
-  baseURL: 'http://localhost:8095',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8095',
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
 // Interceptor for handling tokens on requests
@@ -17,20 +17,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor for handling 401 Unauthorized responses (JWT Expiration)
+// Interceptor for handling error responses
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized (JWT expired/invalid)
     if (error.response && error.response.status === 401) {
-      // Clear token and user data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login page if we aren't already there
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        window.location.href = '/login?expired=true';
+        window.location.href = '/?expired=true';
       }
     }
+
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error - server may be down');
+    }
+
     return Promise.reject(error);
   }
 );
