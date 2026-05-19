@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Settings, User, Bell, Shield, Eye, Palette, Globe, 
-  Lock, Trash2, ChevronRight, Moon, Sun, Monitor
+  Settings, User, Bell, Shield, Palette, 
+  Lock, Trash2, ChevronRight, Moon, Sun
 } from 'lucide-react';
 import useThemeStore from '../../store/themeStore';
 

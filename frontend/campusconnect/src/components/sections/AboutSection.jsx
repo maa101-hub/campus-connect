@@ -119,6 +119,7 @@ const TEAM = [
 // ─── Section ───────────────────────────────────────────────────────────────────
 const AboutSection = () => {
   const sectionRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const inView = useInView(sectionRef, { once: true, amount: 0.1 });
   const [activeTab, setActiveTab] = useState('mission');
 
@@ -343,7 +344,7 @@ const AboutSection = () => {
           className="about-hero-grid"
           style={{
             position: 'relative', zIndex: 10,
-            width: '100%', maxWidth: '1440px', margin: '0 auto',
+            width: '100%', margin: '0 auto',
             padding: 'clamp(120px,12vh,160px) clamp(24px,8vw,100px) 0',
             display: 'grid',
             gridTemplateColumns: '1fr',

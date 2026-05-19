@@ -112,6 +112,7 @@ const PostCard = ({ post }) => (
 // ─── Section ──────────────────────────────────────────────────────────────────
 const CommunitySection = () => {
   const sectionRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const isInView = useInView(sectionRef, { once: true, amount: 0.15 });
 
   return (

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import girl3Img from '../../assets/image3.png';
-import authService from '../../api/authService';
 import useAuthStore from '../../store/authStore';
 
 // ─── Floating left decorations ────────────────────────────────────────────────
@@ -261,7 +260,7 @@ const SignupSection = ({ onClose }) => {
           setErrors({ general: res.message || 'Login failed' });
         }
       }
-    } catch (err) {
+    } catch {
       setErrors({ general: 'Connection failed' });
     }
   };
@@ -285,7 +284,7 @@ const SignupSection = ({ onClose }) => {
       } else {
         setErrors({ general: res.message || 'Invalid OTP' });
       }
-    } catch (err) {
+    } catch {
       setErrors({ general: 'Verification failed' });
     }
   };

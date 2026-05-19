@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader, Link2, Copy } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader } from 'lucide-react';
 import postService from '../../api/postService';
 import { useToast } from '../ui/Toast';
 
@@ -68,12 +68,12 @@ const PostCard = ({ post, index, user }) => {
         await navigator.clipboard.writeText(postUrl);
         toast.success('Link copied to clipboard!');
       }
-    } catch (err) {
+    } catch {
       // User cancelled share or clipboard failed
       try {
         await navigator.clipboard.writeText(postUrl);
         toast.success('Link copied to clipboard!');
-      } catch (e) {
+      } catch {
         toast.error('Failed to copy link');
       }
     }
@@ -292,28 +292,6 @@ const FeedSection = ({ user }) => {
   const PAGE_SIZE = 10;
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
 
-  // Fetch feed on mount
-  useEffect(() => {
-    fetchFeed(0, true);
-  }, []);
-
-  // Infinite scroll with IntersectionObserver
-  useEffect(() => {
-    if (!loadMoreRef.current || !hasMore || loading || loadingMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          loadNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, page]);
-
   const fetchFeed = async (pageNum = 0, isInitial = false) => {
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
@@ -336,8 +314,8 @@ const FeedSection = ({ user }) => {
         setPage(pageNum);
         setHasMore(pageNum + 1 < totalPages && feedPosts.length === PAGE_SIZE);
       }
-    } catch (err) {
-      console.error('Failed to fetch feed:', err);
+    } catch {
+      console.error('Failed to fetch feed');
     } finally {
       if (isInitial) setLoading(false);
       else setLoadingMore(false);
@@ -349,6 +327,30 @@ const FeedSection = ({ user }) => {
       fetchFeed(page + 1, false);
     }
   };
+
+  // Fetch feed on mount
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchFeed(0, true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Infinite scroll with IntersectionObserver
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, page]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

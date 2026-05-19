@@ -1,90 +1,154 @@
-# 🎓 Campus Connect
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.4.5-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License" />
+</p>
 
-A **college-based private social networking platform** built with microservices architecture. Students connect, share, and communicate within verified campus communities.
+<h1 align="center">🎓 CampusConnect</h1>
+
+<p align="center">
+  <strong>A verified, college-based social networking platform built with microservices architecture.</strong><br/>
+  Students connect, share, and communicate within trusted campus communities.
+</p>
+
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-getting-started">Getting Started</a> •
+  <a href="#-api-reference">API Reference</a> •
+  <a href="#-deployment">Deployment</a>
+</p>
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/hero.png" alt="CampusConnect Landing Page" width="800" />
+</p>
+
+<details>
+<summary><strong>View more screenshots</strong></summary>
+
+| Dashboard Feed | Messaging | Profile |
+|:-:|:-:|:-:|
+| ![Feed](docs/screenshots/feed.png) | ![Messages](docs/screenshots/messages.png) | ![Profile](docs/screenshots/profile.png) |
+
+</details>
+
+> **Note:** To add screenshots, run the app locally and save captures to `docs/screenshots/`.
 
 ---
 
 ## ✨ Features
 
-### Core
+### Core Platform
 - **JWT Authentication** — Secure signup/login with email OTP verification
-- **College-Specific Feed** — Posts visible only to your campus community
-- **Real-Time Messaging** — WebSocket-powered chat with typing indicators
-- **Connection System** — Send/accept/reject friend requests with notifications
+- **College-Specific Feed** — Posts visible only to your verified campus community
+- **Real-Time Messaging** — WebSocket-powered chat with typing indicators and read receipts
+- **Connection System** — Send/accept/reject friend requests with live notifications
 - **Profile Management** — Bio, skills, interests, profile photo upload
-- **Dark/Light Theme** — Persistent theme with smooth toggle animation
+- **Events** — Create and RSVP to campus events
 
-### Dashboard Sections
+### Dashboard
 | Section | Description |
 |---------|-------------|
-| Home Feed | Create posts, like, comment, infinite scroll |
+| Home Feed | Create posts with media, like, comment, infinite scroll |
 | My College | Directory of verified students at your college |
 | Explore | Discover posts and colleges across the platform |
 | Trending | Top hashtags and hot discussions |
 | Messages | Real-time chat with typing indicators |
-| Saved Posts | Bookmarked posts for later reading |
+| Events | Campus events with RSVP system |
 | Profile | Edit bio, skills, upload photo, view stats |
 | Settings | Account, notifications, privacy, appearance |
 
-### Backend
-- Microservices architecture with service discovery (Eureka)
-- API Gateway with load-balanced routing
-- JWT validation on all protected endpoints
-- Real-time notifications (like, comment, connection events)
-- File upload for images (posts + profile photos)
-- WebSocket messaging with STOMP/SockJS
+### Production Features
+- 🔒 Path traversal protection on file uploads
+- 🛡️ Security headers (X-Frame-Options, CSP, XSS-Protection)
+- ⚡ Gzip compression + static asset caching
+- 🔄 Health checks on all services
+- 📊 Actuator endpoints for monitoring
+- 🎨 Dark theme with smooth animations
+- ♿ WCAG-compliant focus states and contrast ratios
+- 📱 Fully responsive (375px → 1440px)
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│   Frontend   │────▶│   API Gateway   │────▶│ Discovery Server │
-│  React+Vite  │     │   (Port 8095)   │     │  Eureka (8761)   │
-│  (Port 5173) │     └────────┬────────┘     └──────────────────┘
-└──────────────┘              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-          ┌─────────────────┐  ┌─────────────────┐
-          │  User Service   │  │  Post Service   │
-          │   (Port 8081)   │  │   (Port 8082)   │
-          │  Auth, Messaging│  │  Posts, Comments │
-          │  Connections    │  │  Likes, Upload   │
-          └────────┬────────┘  └────────┬────────┘
-                   │                    │
-                   ▼                    ▼
-          ┌─────────────────────────────────────┐
-          │          PostgreSQL Database         │
-          │          (campus-connect)            │
-          └─────────────────────────────────────┘
+                                    ┌─────────────────────────┐
+                                    │    Service Discovery    │
+                                    │    Eureka (8761)        │
+                                    └────────────┬────────────┘
+                                                 │ register/discover
+┌──────────────┐    ┌──────────────┐    ┌────────┴────────┐
+│   Browser    │───▶│    Nginx     │───▶│   API Gateway   │
+│              │    │  (Port 80)   │    │   (Port 8095)   │
+│              │    │  + Security  │    │   + CORS        │
+│              │    │  + Gzip      │    │   + Routing     │
+└──────────────┘    │  + Rate Limit│    └───────┬─────────┘
+                    └──────────────┘            │
+                              ┌─────────────────┼─────────────────┐
+                              ▼                                   ▼
+                    ┌─────────────────┐              ┌─────────────────┐
+                    │  User Service   │              │  Post Service   │
+                    │   (Port 8081)   │              │   (Port 8082)   │
+                    ├─────────────────┤              ├─────────────────┤
+                    │ • Auth (JWT)    │              │ • Posts CRUD    │
+                    │ • Users         │              │ • Comments      │
+                    │ • Messaging     │              │ • Likes         │
+                    │ • Connections   │              │ • File Upload   │
+                    │ • Events        │              │ • College Feed  │
+                    │ • Notifications │              └────────┬────────┘
+                    │ • WebSocket     │                       │
+                    └────────┬────────┘                       │
+                             │                               │
+                    ┌────────┴───────────────────────────────┴──┐
+                    │              PostgreSQL 16                  │
+                    │           (campus-connect DB)               │
+                    └────────────────────┬───────────────────────┘
+                                         │
+                    ┌────────────────────┴───────────────────────┐
+                    │                Redis 7                      │
+                    │         (Caching + Sessions)                │
+                    └────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, Vite 8, Tailwind CSS 4, Zustand, Framer Motion |
-| Backend | Java 17, Spring Boot 3.3.5, Spring Security, Spring Cloud 2023.0.3 |
-| Database | PostgreSQL 16 |
-| Caching | Redis 7 |
-| Messaging | WebSocket (STOMP + SockJS) |
-| Service Discovery | Netflix Eureka |
-| Gateway | Spring Cloud Gateway |
-| Auth | JWT (jjwt 0.11.5) |
-| DevOps | Docker, Docker Compose, GitHub Actions CI |
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| **Frontend** | React, Vite, Tailwind CSS, Framer Motion, Zustand | 19, 8, 4, 12, 5 |
+| **Backend** | Java, Spring Boot, Spring Security, Spring Cloud | 17, 3.4.5, 6.x, 2024.0.1 |
+| **Database** | PostgreSQL | 16 |
+| **Cache** | Redis | 7 |
+| **Messaging** | WebSocket (STOMP + SockJS) | — |
+| **Discovery** | Netflix Eureka | — |
+| **Gateway** | Spring Cloud Gateway | — |
+| **Auth** | JWT (jjwt) | 0.11.5 |
+| **Icons** | Lucide React | 1.12 |
+| **DevOps** | Docker, Docker Compose, GitHub Actions | — |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+
-- Node.js 18+
-- PostgreSQL 14+
-- Maven 3.8+
+
+| Tool | Version |
+|------|---------|
+| Java | 17+ |
+| Node.js | 20+ |
+| PostgreSQL | 14+ |
+| Maven | 3.8+ |
+| Docker (optional) | 24+ |
 
 ### Option 1: Docker (Recommended)
 
@@ -93,60 +157,63 @@ A **college-based private social networking platform** built with microservices 
 git clone https://github.com/maa101-hub/campus-connect.git
 cd campus-connect
 
-# Create .env file from example
+# Create environment file
 cp .env.example .env
 # Edit .env with your values (DB password, mail config, JWT secret)
 
 # Start all services
 docker compose up --build
 
-# Access:
-# Frontend: http://localhost:3000
-# API Gateway: http://localhost:8095
+# Access the app:
+# Frontend:        http://localhost:3000
+# API Gateway:     http://localhost:8095
 # Eureka Dashboard: http://localhost:8761
 ```
 
 ### Option 2: Manual Setup
 
+<details>
+<summary><strong>Click to expand manual setup instructions</strong></summary>
+
 #### 1. Database
+
 ```bash
-# Create PostgreSQL database
 createdb campus-connect
 ```
 
-#### 2. Environment Variables
+#### 2. Environment
+
 ```bash
 cp .env.example .env
-# Edit .env with your actual values
+# Fill in your actual values
 ```
 
 #### 3. Backend Services (start in order)
 
 ```bash
-# Terminal 1 - Discovery Server
-cd backend/discovery-server
-./mvnw spring-boot:run
+# Terminal 1 — Discovery Server
+cd backend/discovery-server && ./mvnw spring-boot:run
 
-# Terminal 2 - User Service
-cd backend/user-service
-./mvnw spring-boot:run
+# Terminal 2 — User Service
+cd backend/user-service && ./mvnw spring-boot:run
 
-# Terminal 3 - Post Service
-cd backend/post-service
-./mvnw spring-boot:run
+# Terminal 3 — Post Service
+cd backend/post-service && ./mvnw spring-boot:run
 
-# Terminal 4 - API Gateway
-cd backend/api-gateway
-./mvnw spring-boot:run
+# Terminal 4 — API Gateway
+cd backend/api-gateway && ./mvnw spring-boot:run
 ```
 
 #### 4. Frontend
+
 ```bash
 cd frontend/campusconnect
 npm install
 npm run dev
 # Open http://localhost:5173
 ```
+
+</details>
 
 ---
 
@@ -155,87 +222,118 @@ npm run dev
 ```
 campus-connect/
 ├── backend/
-│   ├── api-gateway/          # Spring Cloud Gateway (port 8095)
-│   ├── discovery-server/     # Eureka Server (port 8761)
-│   ├── user-service/         # Auth, Users, Messaging, Connections (port 8081)
-│   └── post-service/         # Posts, Comments, Likes (port 8082)
+│   ├── api-gateway/          # Spring Cloud Gateway (8095)
+│   ├── discovery-server/     # Eureka Server (8761)
+│   ├── user-service/         # Auth, Users, Messaging, Events (8081)
+│   └── post-service/         # Posts, Comments, Likes, Upload (8082)
 ├── frontend/
-│   └── campusconnect/        # React + Vite SPA
-├── docker-compose.yml        # Full-stack Docker setup
-├── .env.example              # Environment variables template
-└── README.md
+│   └── campusconnect/        # React 19 + Vite SPA
+│       ├── src/
+│       │   ├── api/          # Axios service layer
+│       │   ├── components/   # UI components (ui/, layout/, dashboard/, sections/)
+│       │   ├── pages/        # Route-level pages
+│       │   └── store/        # Zustand state management
+│       ├── nginx.conf        # Production nginx config
+│       └── Dockerfile        # Multi-stage build
+├── docker-compose.yml        # Full-stack orchestration
+├── .github/workflows/ci.yml  # CI pipeline
+└── .env.example              # Environment template
 ```
 
 ---
 
-## 🔐 Security
+## 📡 API Reference
 
-- All secrets are stored in environment variables (never committed)
-- JWT authentication on both user-service and post-service
-- CORS configured for frontend origin only
-- Passwords hashed with BCrypt
-- File upload size limits enforced (5MB profile, 10MB posts)
-- File type validation (only JPEG, PNG, GIF, WebP, MP4, WebM allowed)
-- Path traversal protection on file upload/download endpoints
-- Security headers via Nginx (X-Frame-Options, X-Content-Type-Options, XSS-Protection)
-- Rate limiting on API proxy (30 req/s per IP)
-- Actuator endpoints restricted to health, info, metrics only
-- Request size limits on API Gateway (10MB max)
+<details>
+<summary><strong>Authentication</strong> — <code>/api/auth</code></summary>
 
----
-
-## 📡 API Endpoints
-
-### Auth (`/api/auth`)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/signup` | Register new user |
-| POST | `/login` | Login, returns JWT |
-| POST | `/verify-otp` | Verify email OTP |
-| POST | `/forgot-password` | Request password reset |
-| POST | `/reset-password` | Reset with OTP |
+| `POST` | `/signup` | Register new user |
+| `POST` | `/login` | Login → JWT token |
+| `POST` | `/verify-otp` | Verify email OTP |
+| `POST` | `/forgot-password` | Request password reset |
+| `POST` | `/reset-password` | Reset with OTP |
 
-### User (`/api/user`)
+</details>
+
+<details>
+<summary><strong>Users</strong> — <code>/api/user</code></summary>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/me` | Get current user profile |
-| PUT | `/profile` | Update profile info |
-| POST | `/profile-photo` | Upload profile photo |
-| GET | `/college?collegeName=` | List college students |
+| `GET` | `/me` | Current user profile |
+| `PUT` | `/profile` | Update profile |
+| `POST` | `/profile-photo` | Upload photo |
+| `GET` | `/college?collegeName=` | College directory |
 
-### Posts (`/api/posts`)
+</details>
+
+<details>
+<summary><strong>Posts</strong> — <code>/api/posts</code></summary>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/` | Create post |
-| GET | `/feed` | Global feed (paginated) |
-| GET | `/feed/college` | College-specific feed |
-| POST | `/{id}/like` | Toggle like |
-| POST | `/{id}/comments` | Add comment |
-| GET | `/{id}/comments` | Get comments |
+| `POST` | `/` | Create post |
+| `GET` | `/feed` | Global feed (paginated) |
+| `GET` | `/feed/college` | College-specific feed |
+| `POST` | `/{id}/like` | Toggle like |
+| `POST` | `/{id}/comments` | Add comment |
+| `GET` | `/{id}/comments` | Get comments |
+| `DELETE` | `/{id}` | Delete post |
+| `POST` | `/upload` | Upload media file |
 
-### Messages (`/api/messages`)
+</details>
+
+<details>
+<summary><strong>Messages</strong> — <code>/api/messages</code></summary>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/send` | Send message |
-| GET | `/conversation/{userId}` | Get chat history |
-| GET | `/contacts` | Get message contacts |
+| `POST` | `/send` | Send message |
+| `GET` | `/conversation/{userId}` | Chat history |
+| `GET` | `/contacts` | Message contacts |
+| `POST` | `/read/{senderId}` | Mark as read |
 
-### Connections (`/api/connections`)
+</details>
+
+<details>
+<summary><strong>Connections</strong> — <code>/api/connections</code></summary>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/request` | Send connection request |
-| POST | `/{id}/accept` | Accept request |
-| POST | `/{id}/reject` | Reject request |
-| GET | `/pending` | Pending requests |
-| GET | `/friends` | Connected users |
-| GET | `/status` | Check connection status |
+| `POST` | `/request` | Send connection request |
+| `POST` | `/{id}/accept` | Accept |
+| `POST` | `/{id}/reject` | Reject |
+| `GET` | `/pending` | Pending requests |
+| `GET` | `/friends` | Connected user IDs |
+| `GET` | `/status` | Check status between users |
 
-### Notifications (`/api/notifications`)
+</details>
+
+<details>
+<summary><strong>Events</strong> — <code>/api/events</code></summary>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/?userId=` | Get all notifications |
-| GET | `/unread-count?userId=` | Unread count |
-| POST | `/mark-all-read?userId=` | Mark all read |
+| `POST` | `/` | Create event |
+| `GET` | `/` | List events |
+| `POST` | `/{id}/rsvp` | RSVP to event |
+| `DELETE` | `/{id}/rsvp` | Cancel RSVP |
+| `GET` | `/{id}/attendees` | Get attendees |
+
+</details>
+
+<details>
+<summary><strong>Notifications</strong> — <code>/api/notifications</code></summary>
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/?userId=` | All notifications |
+| `GET` | `/unread-count?userId=` | Unread count |
+| `POST` | `/mark-all-read?userId=` | Mark all read |
+
+</details>
 
 ---
 
@@ -243,23 +341,48 @@ campus-connect/
 
 | Topic | Direction | Description |
 |-------|-----------|-------------|
-| `/topic/messages/{userId}` | Server → Client | New message received |
+| `/topic/messages/{userId}` | Server → Client | New message |
 | `/topic/typing/{userId}` | Server → Client | Typing indicator |
+| `/topic/read-receipt/{userId}` | Server → Client | Read receipt |
 | `/app/typing` | Client → Server | Send typing status |
 
 ---
 
-## 🐳 Docker Services
+## 🐳 Deployment
 
-| Service | Port | Description |
+### Docker Services
+
+| Service | Port | Health Check |
 |---------|------|-------------|
-| postgres | 5432 | PostgreSQL 16 database |
-| redis | 6379 | Redis 7 (caching + sessions) |
-| discovery-server | 8761 | Eureka service registry |
-| api-gateway | 8095 | API Gateway + CORS |
-| user-service | 8081 | Users, Auth, Messaging |
-| post-service | 8082 | Posts, Comments, Likes |
-| frontend | 3000 | React app (Nginx + security headers) |
+| `postgres` | 5432 | `pg_isready` |
+| `redis` | 6379 | `redis-cli ping` |
+| `discovery-server` | 8761 | `/actuator/health` |
+| `api-gateway` | 8095 | `/actuator/health` |
+| `user-service` | 8081 | `/actuator/health` |
+| `post-service` | 8082 | `/actuator/health` |
+| `frontend` | 3000 | HTTP 200 on `/` |
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow runs on every push/PR:
+1. **Frontend** — `npm ci` → `npm run lint` → `npm run build`
+2. **Backend** — `mvn verify` with PostgreSQL service container
+3. **Docker** — Validates compose config + builds all images
+
+---
+
+## 🔐 Security
+
+| Feature | Implementation |
+|---------|---------------|
+| Authentication | JWT with BCrypt password hashing |
+| Email Verification | OTP via SMTP (Gmail) |
+| File Upload | Type validation, size limits, path traversal protection |
+| CORS | Configured per-origin on API Gateway |
+| Headers | X-Frame-Options, X-Content-Type-Options, XSS-Protection |
+| Rate Limiting | 30 req/s per IP via Nginx |
+| Actuator | Restricted to health/info/metrics endpoints |
+| Secrets | Environment variables only (never committed) |
 
 ---
 
@@ -270,16 +393,16 @@ campus-connect/
 - [x] Real-time Messaging (WebSocket)
 - [x] Connection/Friend System
 - [x] Notification System
+- [x] Events with RSVP
 - [x] Profile Photo Upload
-- [x] Typing Indicators
 - [x] Docker Deployment
-- [x] Search (Posts + People)
-- [x] Settings Page
+- [x] CI/CD Pipeline
+- [x] Security Hardening
 - [ ] Group Chat
-- [ ] Events & Campus Groups
-- [ ] Cloud Deployment (AWS/GCP)
 - [ ] Push Notifications (Firebase)
+- [ ] Cloud Deployment (AWS/GCP)
 - [ ] Admin Panel for ID Verification
+- [ ] Mobile App (React Native)
 
 ---
 
@@ -289,10 +412,6 @@ campus-connect/
 
 ---
 
-## ⭐ Support
-
-If you like this project, give it a star on GitHub!
-
----
-
-*Building something impactful, one commit at a time.*
+<p align="center">
+  <sub>Built with purpose. One commit at a time.</sub>
+</p>

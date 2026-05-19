@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, GraduationCap, Calendar, Edit3, Settings, Grid, 
-  Bookmark, MessageSquare, Heart, X, Check, Award, Briefcase, 
+  MessageSquare, Heart, X, Check, Award, Briefcase, 
   Code, Coffee, Globe, Camera
 } from 'lucide-react';
 import postService from '../../api/postService';
@@ -22,13 +22,6 @@ const ProfileSection = ({ user }) => {
   const toast = useToast();
   const photoInputRef = useRef(null);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchUserPosts();
-      setEditData({ ...user });
-    }
-  }, [user]);
-
   const fetchUserPosts = async () => {
     setLoading(true);
     try {
@@ -42,6 +35,15 @@ const ProfileSection = ({ user }) => {
       setLoading(false);
     }
   };
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserPosts();
+      setEditData({ ...user });
+    }
+  }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = async () => {
     setSaving(true);

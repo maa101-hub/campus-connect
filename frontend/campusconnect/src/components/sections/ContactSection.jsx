@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion } from 'framer-motion';
 import image4 from '../../assets/image4.png';
 
 const PARTICLES = Array.from({ length: 7 }, (_, i) => ({

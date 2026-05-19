@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Heart, MessageCircle, Trash2, FolderOpen, Clock } from 'lucide-react';
 
 // For now saved posts are stored locally (future: backend support)
+// eslint-disable-next-line no-unused-vars
 const SavedPostsSection = ({ user }) => {
   const [savedPosts, setSavedPosts] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
