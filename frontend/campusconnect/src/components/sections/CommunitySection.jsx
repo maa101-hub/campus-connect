@@ -3,13 +3,13 @@ import { motion, useInView } from 'framer-motion';
 import girl2Img from '../../assets/image2.png';
 
 // ─── Floating particles (same as HeroSection) ─────────────────────────────────
-const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 8 }, (_, i) => ({
   id: i,
-  x: `${(i * 6.3 + 5) % 100}%`,
-  y: `${(i * 8.1 + 10) % 90}%`,
+  x: `${(i * 11 + 5) % 95}%`,
+  y: `${(i * 10 + 10) % 85}%`,
   size: (i % 3) + 2,
-  duration: (i % 4) + 5,
-  delay: (i % 5) * 0.8,
+  duration: (i % 4) + 6,
+  delay: (i % 5) * 1,
   color: i % 3 === 0 ? '#9d4edd' : i % 3 === 1 ? '#ff6a00' : '#00c973',
 }));
 

@@ -6,10 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '20'
+
 jobs:
   # ─── Frontend Build & Lint ────────────────────────────────
   frontend:
-    name: Frontend Build
+    name: Frontend Build & Lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -21,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/campusconnect/package-lock.json
 
@@ -29,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint || true
+        run: npm run lint
 
       - name: Build
         run: npm run build
@@ -41,10 +45,9 @@ jobs:
           path: frontend/campusconnect/dist
           retention-days: 7
 
-  # ─── Discovery Server Build ───────────────────────────────
+  # ─── Discovery Server ────────────────────────────────────
   discovery-server:
-    name: Discovery Server Build
-    
+    name: Discovery Server
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -53,64 +56,114 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-      - name: Give execute permission to mvnw
-        run: chmod +x mvnw
-      - name: Build with Maven
-        run: ./mvnw package -DskipTests -B
 
-  # ─── User Service Build ───────────────────────────────────
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Build & Test
+        run: ./mvnw verify -B
+
+  # ─── User Service ────────────────────────────────────────
   user-service:
-    name: User Service Build
+    name: User Service
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend/user-service
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: campus-connect-test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-      - name: Give execute permission to mvnw
-        run: chmod +x mvnw
-      - name: Build with Maven
-        run: ./mvnw package -DskipTests -B
 
-  # ─── Post Service Build ───────────────────────────────────
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Build & Test
+        run: ./mvnw verify -B
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: campus-connect-test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          JWT_SECRET: CI_TestSecretKey_MinimumThirtyTwoCharacters
+
+  # ─── Post Service ────────────────────────────────────────
   post-service:
-    name: Post Service Build
+    name: Post Service
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend/post-service
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: campus-connect-test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-      - name: Give execute permission to mvnw
-        run: chmod +x mvnw
-      - name: Build with Maven
-        run: ./mvnw package -DskipTests -B
 
-  # ─── API Gateway Build ────────────────────────────────────
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Build & Test
+        run: ./mvnw verify -B
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: campus-connect-test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          JWT_SECRET: CI_TestSecretKey_MinimumThirtyTwoCharacters
+
+  # ─── API Gateway ─────────────────────────────────────────
   api-gateway:
-    name: API Gateway Build
+    name: API Gateway
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -119,18 +172,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-      - name: Give execute permission to mvnw
-        run: chmod +x mvnw
-      - name: Build with Maven
-        run: ./mvnw package -DskipTests -B
 
-  # ─── Docker Build Check ───────────────────────────────────
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Build & Test
+        run: ./mvnw verify -B
+
+  # ─── Docker Compose Validation ───────────────────────────
   docker:
     name: Docker Compose Validation
     runs-on: ubuntu-latest
@@ -141,3 +196,6 @@ jobs:
 
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
+
+      - name: Build all images
+        run: docker compose build

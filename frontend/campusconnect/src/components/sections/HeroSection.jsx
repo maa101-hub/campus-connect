@@ -22,13 +22,13 @@ const fadeIn = {
 };
 
 // ─── Floating particles config ────────────────────────────────────────────────
-const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 10 }, (_, i) => ({
   id: i,
-  x: `${(i * 5.7 + 3) % 100}%`,
-  y: `${(i * 7.3 + 8) % 90}%`,
+  x: `${(i * 9.5 + 5) % 95}%`,
+  y: `${(i * 11 + 8) % 85}%`,
   size: (i % 3) + 2,
-  duration: (i % 4) + 5,
-  delay: (i % 5) * 0.8,
+  duration: (i % 4) + 6,
+  delay: (i % 5) * 1,
   color: i % 3 === 0 ? '#9d4edd' : i % 3 === 1 ? '#ff6a00' : '#00c973',
 }));
 
