@@ -27,9 +27,18 @@
 
 ## 📸 Preview
 
-> **Landing Page:** Dark-themed, animated hero with gradient text, floating particles, and a marquee strip showcasing platform features. Built with Framer Motion + Tailwind CSS.
+<table>
+<tr>
+<td align="center"><strong>🌙 Landing Page</strong></td>
+<td align="center"><strong>💬 Real-time Chat</strong></td>
+</tr>
+<tr>
+<td>Dark-themed hero with animated gradient text, floating particles, and a scrolling marquee. Built with Framer Motion.</td>
+<td>WebSocket-powered messaging with typing indicators, read receipts, and contact list.</td>
+</tr>
+</table>
 
-> To view the app locally, run `npm run dev` in `frontend/campusconnect/` and open http://localhost:5173
+> **Run locally:** `cd frontend/campusconnect && npm install && npm run dev` → open http://localhost:5173
 
 ---
 
@@ -397,10 +406,26 @@ The GitHub Actions workflow runs on every push/PR:
 
 ## 👨‍💻 Author
 
-**Sourabh Ramteke**
+**Sourabh Ramteke** — Full-Stack Java Developer | MCA @ NIT Trichy
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin)](https://linkedin.com/in/sourabh-ramteke-704152289)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github)](https://github.com/maa101-hub)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! If you'd like to contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
 <p align="center">
-  <sub>Built with purpose. One commit at a time.</sub>
+  <sub>Built with purpose. One commit at a time.</sub><br/>
+  <sub>If you found this useful, consider giving it a ⭐</sub>
 </p>
