@@ -33,7 +33,7 @@ const posts = [
   },
   {
     id: 3,
-    text: 'Today Is Trending 😊',
+    text: 'Today Is Trending',
     meta: <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ display: 'inline', marginRight: '4px' }}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 1.2k views</>,
     top: '68%',
     right: '12%',

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion';
 
 // ─── Assets ──────────────────────────────────────────────────────────────────
 import perspectiveGrid from '../../assets/perspective-grid.png';
@@ -51,6 +51,15 @@ const statBadges = [
 const HeroSection = ({ onOpenSignup }) => {
   const containerRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: -999, y: -999 });
+
+  // Scroll-linked parallax for depth effect
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  });
+  const gridParallaxY = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const girlParallaxY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+  const orbParallaxY = useTransform(scrollYProgress, [0, 1], [0, -120]);
 
   // Mouse parallax for girl image
   const mx = useMotionValue(0);
@@ -153,7 +162,7 @@ const HeroSection = ({ onOpenSignup }) => {
         />
       ))}
 
-      {/* ── Ambient purple orb (right) — breathing ── */}
+      {/* ── Ambient purple orb (right) — breathing + parallax ── */}
       <motion.div
         aria-hidden="true"
         animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
@@ -168,6 +177,7 @@ const HeroSection = ({ onOpenSignup }) => {
           background: 'radial-gradient(circle, rgba(151,25,253,0.35) 0%, rgba(157,78,221,0.15) 50%, transparent 70%)',
           filter: 'blur(80px)',
           pointerEvents: 'none',
+          y: orbParallaxY,
         }}
       />
 
@@ -189,7 +199,7 @@ const HeroSection = ({ onOpenSignup }) => {
         }}
       />
 
-      {/* ── Perspective grid (left half) ── */}
+      {/* ── Perspective grid (left half) — parallax ── */}
       <motion.img
         src={perspectiveGrid}
         alt=""
@@ -209,10 +219,11 @@ const HeroSection = ({ onOpenSignup }) => {
           pointerEvents: 'none',
           maskImage: 'linear-gradient(to right, rgba(0,0,0,0.9) 40%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0.9) 40%, transparent 100%)',
+          y: gridParallaxY,
         }}
       />
 
-      {/* ── Girl image — fade in + mouse parallax ── */}
+      {/* ── Girl image — fade in + mouse parallax + scroll parallax ── */}
       <motion.img
         src={heroImage}
         className="hero-girl-img"
@@ -245,6 +256,7 @@ const HeroSection = ({ onOpenSignup }) => {
           WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.8) 30%, transparent 100%)',
           transformStyle: 'preserve-3d',
           filter: 'drop-shadow(0 0 40px rgba(151,25,253,0.2))',
+          y: girlParallaxY,
         }}
       />
 

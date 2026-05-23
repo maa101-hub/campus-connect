@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 
 const STATS = [
-  { value: 5000, suffix: '+', label: 'Students Connected', icon: '👥' },
-  { value: 200, suffix: '+', label: 'Colleges Onboard', icon: '🏫' },
-  { value: 15000, suffix: '+', label: 'Posts Shared', icon: '📝' },
-  { value: 1000000, suffix: '+', label: 'Messages Sent', icon: '💬' },
+  { value: 5000, suffix: '+', label: 'Students Connected', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9719fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { value: 200, suffix: '+', label: 'Colleges Onboard', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9719fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
+  { value: 15000, suffix: '+', label: 'Posts Shared', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9719fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> },
+  { value: 1000000, suffix: '+', label: 'Messages Sent', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9719fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg> },
 ];
 
 const TESTIMONIALS = [
@@ -127,7 +127,7 @@ const StatsSection = () => {
                 borderRadius: 20, backdropFilter: 'blur(10px)',
               }}
             >
-              <div style={{ fontSize: 36, marginBottom: 8 }}>{stat.icon}</div>
+              <div style={{ fontSize: 36, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
               <div style={{
                 fontSize: 40, fontWeight: 800,
                 background: 'linear-gradient(135deg, #9719fd, #c77dff)',

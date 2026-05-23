@@ -82,11 +82,11 @@ const Counter = ({ target, suffix, prefix }) => {
 
 // ─── Timeline milestones ───────────────────────────────────────────────────────
 const MILESTONES = [
-  { year: '2022', event: 'Idea born in a college hostel room 🏠' },
-  { year: '2023', event: 'Beta launched at 5 colleges 🚀' },
-  { year: '2024', event: 'Crossed 10k verified students 🎉' },
-  { year: '2025', event: 'Expanded to 200+ colleges across India 🇮🇳' },
-  { year: '2026', event: 'Building the future of campus life ⚡' },
+  { year: '2022', event: 'Idea born in a college hostel room' },
+  { year: '2023', event: 'Beta launched at 5 colleges' },
+  { year: '2024', event: 'Crossed 10k verified students' },
+  { year: '2025', event: 'Expanded to 200+ colleges across India' },
+  { year: '2026', event: 'Building the future of campus life' },
 ];
 
 const TEAM = [
@@ -298,7 +298,7 @@ const AboutSection = () => {
           }}
         >
           <p style={{ margin: 0, fontFamily: "'Manrope',sans-serif", fontWeight: 600, fontSize: 13, color: '#fff', lineHeight: 1.4 }}>
-            "Why isn't there an Instagram for college?" 🤔
+            "Why isn't there an Instagram for college?"
           </p>
           <div style={{ position: 'absolute', bottom: -8, right: 24, width: 16, height: 16, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(157,78,221,0.35)', borderTop: 'none', borderRight: 'none', transform: 'rotate(-45deg)' }} />
         </motion.div>
@@ -459,7 +459,7 @@ const AboutSection = () => {
                     transition: 'all 0.25s ease',
                   }}
                 >
-                  {tab === 'mission' ? '🎯 Mission' : tab === 'timeline' ? '🕐 Timeline' : '👥 Our Team'}
+                  {tab === 'mission' ? 'Mission' : tab === 'timeline' ? 'Timeline' : 'Our Team'}
                 </button>
               ))}
             </motion.div>
@@ -649,7 +649,7 @@ const AboutSection = () => {
           transition={{ duration: 0.6 }}
           style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 300, fontSize: 'clamp(14px,1.4vw,18px)', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: 0, lineHeight: 1.7 }}
         >
-          Built by students, for students — with ❤️ from Bangalore. We're a small team with a big mission: make every campus feel like home.
+          Built by students, for students — with love from Bangalore. We're a small team with a big mission: make every campus feel like home.
         </motion.p>
 
         <motion.div

@@ -7,18 +7,14 @@ import ContactSection from './sections/ContactSection';
 import AboutSection from './sections/AboutSection';
 import StatsSection from './sections/StatsSection';
 import SignupSection from './sections/SignupSection';
+import { ScrollProgressBar, SectionIndicator } from './ScrollAnimations';
+
+const SECTIONS = ['hero', 'about', 'community', 'contact'];
 
 /**
  * CampusConnectHero
  * ─────────────────
  * Top-level page shell. Controls the signup overlay state.
- *  • Navbar  (fixed, scroll-aware)
- *  • HeroSection — "Get Started" opens signup overlay
- *  • AboutSection — Story and mission
- *  • StatsSection — Animated counters + testimonials
- *  • CommunitySection — Live feed and cards
- *  • ContactSection — Get in touch
- *  • Footer — Site links and credits
  */
 const CampusConnectHero = () => {
   const [showSignup, setShowSignup] = useState(false);
@@ -32,6 +28,8 @@ const CampusConnectHero = () => {
         overflowX: 'hidden',
       }}
     >
+      <ScrollProgressBar />
+      <SectionIndicator sections={SECTIONS} />
       <Navbar onOpenSignup={() => setShowSignup(true)} />
       
       <HeroSection onOpenSignup={() => setShowSignup(true)} />

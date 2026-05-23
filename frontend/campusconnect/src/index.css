@@ -233,3 +233,21 @@ button, a, input, textarea, select, .post-card, .card {
   color: rgba(255, 255, 255, 0.35);
   font-family: 'Manrope', sans-serif;
 }
+
+/* ─── Section indicator (hide on mobile) ────────────────────── */
+@media (max-width: 768px) {
+  [aria-hidden="true"][style*="position: fixed"][style*="right: 24px"] {
+    display: none !important;
+  }
+}
+
+/* ─── Scroll-linked section transitions ─────────────────────── */
+section {
+  will-change: transform;
+}
+
+/* ─── Parallax performance hint ─────────────────────────────── */
+.parallax-layer {
+  will-change: transform;
+  transform: translateZ(0);
+}
