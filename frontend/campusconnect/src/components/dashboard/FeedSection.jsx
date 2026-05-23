@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Image, Video, Smile, Send, Loader, GraduationCap, PenLine } from 'lucide-react';
 import postService from '../../api/postService';
 import { useToast } from '../ui/Toast';
+import ErrorState from '../ui/ErrorState';
 
 // Helper: time ago
 const timeAgo = (dateStr) => {
@@ -130,9 +131,9 @@ const PostCard = ({ post, index, user }) => {
   return (
     <motion.div
       className="post-card"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.35 }}
+      transition={{ delay: index * 0.05, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
     >
       <div className="post-header">
         <div className="post-avatar" style={{ background: avatarColor(post.username) }}>{initials}</div>
@@ -144,7 +145,7 @@ const PostCard = ({ post, index, user }) => {
             </span>
           </h4>
           <div className="post-meta">
-            <span className="college-badge">🎓 {post.collegeName}</span>
+            <span className="college-badge"><GraduationCap size={12} /> {post.collegeName}</span>
             <span>·</span>
             <span>{timeAgo(post.createdAt)}</span>
           </div>
@@ -157,8 +158,11 @@ const PostCard = ({ post, index, user }) => {
         <img 
           className="post-image" 
           src={post.imageUrl.startsWith('/') ? `http://localhost:8095${post.imageUrl}` : post.imageUrl} 
-          alt="Post" 
-          loading="lazy" 
+          alt={`Post by ${post.username}`}
+          loading="lazy"
+          width={600}
+          height={400}
+          style={{ width: '100%', height: 'auto', maxHeight: 400, objectFit: 'cover' }}
         />
       )}
 
@@ -278,6 +282,7 @@ const PostCard = ({ post, index, user }) => {
 const FeedSection = ({ user }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
@@ -293,7 +298,7 @@ const FeedSection = ({ user }) => {
   const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SC';
 
   const fetchFeed = async (pageNum = 0, isInitial = false) => {
-    if (isInitial) setLoading(true);
+    if (isInitial) { setLoading(true); setError(null); }
     else setLoadingMore(true);
 
     try {
@@ -315,6 +320,7 @@ const FeedSection = ({ user }) => {
         setHasMore(pageNum + 1 < totalPages && feedPosts.length === PAGE_SIZE);
       }
     } catch {
+      if (isInitial) setError('Failed to load feed. Please try again.');
       console.error('Failed to fetch feed');
     } finally {
       if (isInitial) setLoading(false);
@@ -498,8 +504,13 @@ const FeedSection = ({ user }) => {
         </>
       )}
 
+      {/* Error state */}
+      {!loading && error && (
+        <ErrorState message={error} onRetry={() => fetchFeed(0, true)} />
+      )}
+
       {/* Empty state */}
-      {!loading && posts.length === 0 && (
+      {!loading && !error && posts.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -508,7 +519,9 @@ const FeedSection = ({ user }) => {
             color: 'var(--text-muted)', fontSize: 14,
           }}
         >
-          <p style={{ fontSize: 40, marginBottom: 12 }}>📝</p>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+            <PenLine size={40} strokeWidth={1.5} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+          </div>
           <p style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-secondary)', marginBottom: 4 }}>
             No posts yet
           </p>

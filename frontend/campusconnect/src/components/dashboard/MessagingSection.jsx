@@ -390,10 +390,16 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
                 display: 'flex', flexDirection: 'column', gap: 4,
               }}>
                 {loadingMessages ? (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 40 }}>Loading messages...</div>
+                  <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <div key={n} style={{ display: 'flex', gap: 10, alignItems: n % 2 === 0 ? 'flex-end' : 'flex-start', flexDirection: 'column' }}>
+                        <div className="skeleton" style={{ width: `${40 + (n * 12) % 40}%`, height: 36, borderRadius: 14 }} />
+                      </div>
+                    ))}
+                  </div>
                 ) : messages.length === 0 ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: 60, fontSize: 13 }}>
-                    No messages yet. Say hi! 👋
+                    No messages yet. Say hi!
                   </div>
                 ) : (
                   messages.map((m, i) => {

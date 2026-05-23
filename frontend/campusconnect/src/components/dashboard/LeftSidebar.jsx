@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Home, Building2, Compass, Bookmark, UserCircle, Settings, LogOut, TrendingUp, Calendar } from 'lucide-react';
+import { Home, Building2, Compass, Bookmark, UserCircle, Settings, LogOut, TrendingUp, Calendar, GraduationCap } from 'lucide-react';
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Home Feed' },
@@ -31,8 +31,8 @@ const LeftSidebar = ({ user, activeNav, setActiveNav, onLogout }) => {
           <h4>{user?.name || 'Loading...'}</h4>
           <p>@{user?.username || '...'}</p>
           {user?.collegeName && (
-            <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2 }}>
-              🎓 {user.collegeName}
+            <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <GraduationCap size={12} /> {user.collegeName}
             </p>
           )}
         </div>

@@ -253,7 +253,9 @@ const CollegeDirectory = ({ user, onMessageUser }) => {
 
       {!loading && filteredUsers.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-          <p style={{ fontSize: 40, marginBottom: 12 }}>🔍</p>
+          <div style={{ width: 64, height: 64, borderRadius: 18, margin: '0 auto 12px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Search size={28} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+          </div>
           <p style={{ fontWeight: 600 }}>No students found matching your search.</p>
         </div>
       )}

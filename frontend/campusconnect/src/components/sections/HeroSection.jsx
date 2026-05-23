@@ -13,7 +13,7 @@ const container = {
 
 const slideUp = {
   hidden:  { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] } },
 };
 
 const fadeIn = {
@@ -78,7 +78,7 @@ const HeroSection = ({ onOpenSignup }) => {
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: '#0a0010',
         overflow: 'hidden',
         display: 'flex',

@@ -29,7 +29,11 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
     setLoadingNotifs(true);
     try {
       const res = await notificationService.getNotifications(user.id);
-      if (res.success) setNotifications(res.data || []);
+      if (res.success) {
+        // Only show unread notifications
+        const unread = (res.data || []).filter(n => !n.isRead);
+        setNotifications(unread);
+      }
     } catch {
       // Silently fail — notifications are non-critical
     } finally {
@@ -64,7 +68,7 @@ const DashNavbar = ({ user, onLogout, onNavigate }) => {
     if (!user?.id) return;
     try {
       await notificationService.markAllAsRead(user.id);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications([]);
       setUnreadCount(0);
     } catch (err) {
       console.error('Failed to mark as read:', err);

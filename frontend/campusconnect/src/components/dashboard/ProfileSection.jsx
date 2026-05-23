@@ -103,9 +103,22 @@ const ProfileSection = ({ user }) => {
       className="dash-feed"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      transition={{ ease: [0.23, 1, 0.32, 1] }}
       style={{ padding: '0 0 40px 0' }}
     >
       {/* Profile Header / Banner */}
+      <style>{`
+        .profile-grid {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 40px;
+        }
+        @media (max-width: 900px) {
+          .profile-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       <div style={{ 
         height: 180, background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
         position: 'relative', borderRadius: '0 0 24px 24px'
@@ -194,13 +207,13 @@ const ProfileSection = ({ user }) => {
         </div>
       </div>
 
-      <div style={{ marginTop: 80, padding: '0 40px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 40 }}>
+      <div className="profile-grid" style={{ marginTop: 80, padding: '0 40px' }}>
         {/* Left Content: Bio & Posts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {/* Bio Section */}
           <div className="post-card" style={{ padding: 24, margin: 0 }}>
             <h4 style={{ margin: '0 0 12px 0', fontSize: 16, fontWeight: 700 }}>Bio</h4>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 15 }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 15, maxWidth: '65ch' }}>
               {user?.bio || "No bio added yet. Tell your campus community a bit about yourself!"}
             </p>
             <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
@@ -236,12 +249,33 @@ const ProfileSection = ({ user }) => {
             </div>
 
             {loading ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>Loading posts...</div>
-            ) : posts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-                <p style={{ fontSize: 40 }}>📭</p>
-                <p>You haven't posted anything yet.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[1, 2, 3].map(n => (
+                  <div key={n} className="post-card" style={{ padding: 0, margin: 0, overflow: 'hidden' }}>
+                    <div className="skeleton" style={{ width: '100%', height: 180 }} />
+                    <div style={{ padding: 16 }}>
+                      <div className="skeleton" style={{ width: '60%', height: 12, marginBottom: 8 }} />
+                      <div className="skeleton" style={{ width: '30%', height: 10 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : posts.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}
+              >
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20, margin: '0 auto 16px',
+                  background: 'var(--bg-tertiary)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Grid size={32} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+                </div>
+                <p style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-secondary)', marginBottom: 4 }}>No posts yet</p>
+                <p style={{ fontSize: 13 }}>Share something with your campus to see it here.</p>
+              </motion.div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {posts.map((post, i) => (
@@ -257,7 +291,7 @@ const ProfileSection = ({ user }) => {
                     }}
                   >
                     {post.imageUrl ? (
-                      <img src={`http://localhost:8095${post.imageUrl}`} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                      <img src={`http://localhost:8095${post.imageUrl}`} alt="Post content" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
                     ) : (
                       <div style={{ 
                         height: 180, background: 'var(--bg-tertiary)', 
@@ -314,7 +348,7 @@ const ProfileSection = ({ user }) => {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
               }}>
                 <div style={{ color: 'var(--accent)', marginBottom: 2 }}>{stat.icon}</div>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>{stat.value}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{stat.value}</div>
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
               </div>
             ))}
@@ -342,7 +376,7 @@ const ProfileSection = ({ user }) => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {interestList.map(interest => (
                     <span key={interest} style={{ 
-                        padding: '6px 12px', borderRadius: 8, background: 'rgba(var(--accent-rgb), 0.1)',
+                        padding: '6px 12px', borderRadius: 8, background: 'var(--accent-light)',
                         fontSize: 12, fontWeight: 600, color: 'var(--accent)'
                     }}>
                         {interest}
@@ -352,10 +386,29 @@ const ProfileSection = ({ user }) => {
           </div>
 
           {/* Social Links */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, padding: 10 }}>
-              <motion.a whileHover={{ y: -3, color: 'var(--accent)' }} href="#" style={{ color: 'var(--text-muted)' }}><Globe size={20} /></motion.a>
-              <motion.a whileHover={{ y: -3, color: 'var(--accent)' }} href="#" style={{ color: 'var(--text-muted)' }}><Globe size={20} /></motion.a>
-              <motion.a whileHover={{ y: -3, color: 'var(--accent)' }} href="#" style={{ color: 'var(--text-muted)' }}><Globe size={20} /></motion.a>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: 10 }}>
+              {[
+                { icon: <Globe size={18} />, label: 'Website' },
+                { icon: <Code size={18} />, label: 'GitHub' },
+                { icon: <Briefcase size={18} />, label: 'LinkedIn' },
+              ].map(link => (
+                <motion.button
+                  key={link.label}
+                  whileHover={{ y: -2, color: 'var(--accent)' }}
+                  whileTap={{ scale: 0.9 }}
+                  title={link.label}
+                  aria-label={link.label}
+                  style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--text-muted)', cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
+                  }}
+                >
+                  {link.icon}
+                </motion.button>
+              ))}
           </div>
         </div>
       </div>
@@ -363,10 +416,18 @@ const ProfileSection = ({ user }) => {
       {/* Edit Modal */}
       <AnimatePresence>
         {isEditing && (
-          <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
-          }}>
+          <div 
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setIsEditing(false); }}
+            onKeyDown={(e) => { if (e.key === 'Escape') setIsEditing(false); }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit profile"
+            tabIndex={-1}
+          >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

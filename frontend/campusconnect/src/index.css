@@ -11,6 +11,16 @@
   --font-poppins:        'Poppins', sans-serif;
   --font-baloo:          'Baloo 2', cursive;
   --font-sail:           'Sail', cursive;
+
+  /* Premium easing curves */
+  --ease-out-expo:       cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-expo:    cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-out-quart:      cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring:         cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Spacing scale */
+  --space-section:       clamp(4rem, 10vw, 8rem);
+  --space-section-sm:    clamp(3rem, 6vw, 5rem);
 }
 
 /* ─── Base reset ────────────────────────────────────────────── */
@@ -48,11 +58,40 @@ body::before {
 }
 
 button, input, select, textarea {
-  appearance: none;
   background: transparent;
   border: 0;
   outline: none;
   font-family: inherit;
+}
+
+/* ─── Accessible focus states ───────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-brand-purple);
+  outline-offset: 2px;
+}
+
+/* ─── Reduced motion preference ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Tactile button feedback ───────────────────────────────── */
+button, [role="button"], a[href] {
+  cursor: pointer;
+}
+button:active, [role="button"]:active {
+  transform: scale(0.97);
+}
+
+/* ─── Premium transitions (default for interactive elements) ── */
+button, a, input, textarea, select, .post-card, .card {
+  transition-timing-function: var(--ease-out-expo);
+  transition-duration: 200ms;
 }
 
 /* ─── Utility classes ───────────────────────────────────────── */
@@ -62,6 +101,11 @@ button, input, select, textarea {
 .font-sail     { font-family: var(--font-sail); }
 
 .cursor-pointer { cursor: pointer !important; }
+
+/* ─── Typography utilities ──────────────────────────────────── */
+.heading-tight { letter-spacing: -0.03em; line-height: 1.1; }
+.body-readable { max-width: 65ch; line-height: 1.7; }
+.mono-numbers  { font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', 'SF Mono', monospace; }
 
 /* ─── Keyframe animations ───────────────────────────────────── */
 @keyframes fade-in {
@@ -106,13 +150,26 @@ button, input, select, textarea {
 }
 
 /* ─── Animation helpers ─────────────────────────────────────── */
-.animate-fade-in   { animation: fade-in  0.8s ease both; }
-.animate-fade-up   { animation: fade-up  0.8s ease both; }
+.animate-fade-in   { animation: fade-in  0.6s var(--ease-out-expo) both; }
+.animate-fade-up   { animation: fade-up  0.6s var(--ease-out-expo) both; }
 .animate-float     { animation: float    4s  ease-in-out infinite; }
 .animate-glow      { animation: glow-pulse 3s ease-in-out infinite; }
 .animate-spin      { animation: spin 1s linear infinite; }
 .animate-marquee   { animation: marquee var(--duration, 20s) linear infinite; }
 .animate-orb       { animation: orb-drift 12s ease-in-out infinite; }
+
+/* ─── Staggered entry helper ────────────────────────────────── */
+.stagger-enter > * {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fade-up 0.5s var(--ease-out-expo) forwards;
+}
+.stagger-enter > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-enter > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-enter > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-enter > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-enter > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-enter > *:nth-child(6) { animation-delay: 300ms; }
 
 /* ─── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }

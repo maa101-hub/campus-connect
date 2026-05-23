@@ -27,7 +27,7 @@ const CampusConnectHero = () => {
     <div
       style={{
         background: '#0a0010',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100%',
         overflowX: 'hidden',
       }}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
@@ -8,15 +8,31 @@ import LeftSidebar from '../components/dashboard/LeftSidebar';
 import FeedSection from '../components/dashboard/FeedSection';
 import RightSidebar from '../components/dashboard/RightSidebar';
 import MobileBottomNav from '../components/dashboard/MobileBottomNav';
-import CollegeDirectory from '../components/dashboard/CollegeDirectory';
-import MessagingSection from '../components/dashboard/MessagingSection';
-import ProfileSection from '../components/dashboard/ProfileSection';
-import ExploreSection from '../components/dashboard/ExploreSection';
-import TrendingSection from '../components/dashboard/TrendingSection';
-import SavedPostsSection from '../components/dashboard/SavedPostsSection';
-import SettingsSection from '../components/dashboard/SettingsSection';
-import EventsSection from '../components/dashboard/EventsSection';
 import './Dashboard.css';
+
+// Lazy-loaded sections (code-split for performance)
+const CollegeDirectory = lazy(() => import('../components/dashboard/CollegeDirectory'));
+const MessagingSection = lazy(() => import('../components/dashboard/MessagingSection'));
+const ProfileSection = lazy(() => import('../components/dashboard/ProfileSection'));
+const ExploreSection = lazy(() => import('../components/dashboard/ExploreSection'));
+const TrendingSection = lazy(() => import('../components/dashboard/TrendingSection'));
+const SavedPostsSection = lazy(() => import('../components/dashboard/SavedPostsSection'));
+const SettingsSection = lazy(() => import('../components/dashboard/SettingsSection'));
+const EventsSection = lazy(() => import('../components/dashboard/EventsSection'));
+
+// Section loading fallback
+const SectionLoader = () => (
+  <div style={{ padding: '60px 24px', textAlign: 'center' }}>
+    <div style={{
+      width: 40, height: 40, margin: '0 auto 16px',
+      border: '3px solid var(--border-color)',
+      borderTopColor: 'var(--accent)',
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite',
+    }} />
+    <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading section...</p>
+  </div>
+);
 
 const Dashboard = () => {
   const { user, logout } = useAuthStore();
@@ -94,7 +110,9 @@ const Dashboard = () => {
             transition={{ duration: 0.2 }}
             style={{ flex: 1, minWidth: 0 }}
           >
-            {renderContent()}
+            <Suspense fallback={<SectionLoader />}>
+              {renderContent()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
         {showRightSidebar && <RightSidebar user={user} />}

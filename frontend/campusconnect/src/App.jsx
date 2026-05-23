@@ -26,6 +26,7 @@ const Splash = ({ onDone }) => {
         background: '#0a0010',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: '20px',
+        minHeight: '100dvh',
       }}
     >
       {/* Logo mark */}
@@ -86,10 +87,33 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
+        {/* Skip to content — accessibility */}
+        <a
+          href="#main-content"
+          style={{
+            position: 'absolute',
+            top: '-100px',
+            left: '16px',
+            zIndex: 9999,
+            padding: '12px 24px',
+            background: '#7C3AED',
+            color: '#fff',
+            borderRadius: '8px',
+            fontWeight: 600,
+            fontSize: '14px',
+            textDecoration: 'none',
+            transition: 'top 0.2s ease',
+          }}
+          onFocus={(e) => { e.currentTarget.style.top = '16px'; }}
+          onBlur={(e) => { e.currentTarget.style.top = '-100px'; }}
+        >
+          Skip to main content
+        </a>
         <Router>
           <AnimatePresence mode="wait">
             <motion.div
               key="app"
+              id="main-content"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}

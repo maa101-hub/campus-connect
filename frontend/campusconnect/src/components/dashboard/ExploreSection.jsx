@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Search, Users, TrendingUp, Hash, Filter } from 'lucide-react';
+import { Compass, Search, Users, TrendingUp, Hash, X, Heart, MessageCircle, Code, Calendar, Trophy, Palette, GraduationCap } from 'lucide-react';
 import postService from '../../api/postService';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Compass },
-  { id: 'tech', label: 'Technology', icon: Hash },
-  { id: 'events', label: 'Events', icon: Hash },
-  { id: 'academics', label: 'Academics', icon: Hash },
-  { id: 'sports', label: 'Sports', icon: Hash },
-  { id: 'clubs', label: 'Clubs', icon: Users },
+  { id: 'tech', label: 'Technology', icon: Code },
+  { id: 'events', label: 'Events', icon: Calendar },
+  { id: 'academics', label: 'Academics', icon: GraduationCap },
+  { id: 'sports', label: 'Sports', icon: Trophy },
+  { id: 'clubs', label: 'Clubs & Arts', icon: Palette },
 ];
 
 const DISCOVER_COLLEGES = [
@@ -52,7 +52,7 @@ const ExploreSection = ({ user }) => {
       className="dash-feed"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       style={{ padding: '0 24px 40px' }}
     >
       {/* Header */}
@@ -70,9 +70,10 @@ const ExploreSection = ({ user }) => {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 18px', background: 'var(--bg-tertiary)',
-        borderRadius: 14, marginBottom: 24, border: '1px solid var(--border-color)'
+        borderRadius: 14, marginBottom: 24, border: '1px solid var(--border-color)',
+        transition: 'border-color 0.2s',
       }}>
-        <Search size={18} style={{ color: 'var(--text-muted)' }} />
+        <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -82,24 +83,32 @@ const ExploreSection = ({ user }) => {
             fontSize: 14, color: 'var(--text-primary)'
           }}
         />
-        <Filter size={18} style={{ color: 'var(--text-muted)', cursor: 'pointer' }} />
+        {searchQuery && (
+          <motion.button
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            onClick={() => setSearchQuery('')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, display: 'flex' }}
+          >
+            <X size={16} />
+          </motion.button>
+        )}
       </div>
 
       {/* Categories */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 28, flexWrap: 'wrap', background: 'var(--bg-tertiary)', padding: 5, borderRadius: 14, width: 'fit-content' }}>
         {CATEGORIES.map(cat => (
           <motion.button
             key={cat.id}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveCategory(cat.id)}
             style={{
-              padding: '8px 16px', borderRadius: 20,
-              background: activeCategory === cat.id ? 'var(--accent)' : 'var(--bg-tertiary)',
+              padding: '8px 16px', borderRadius: 10,
+              background: activeCategory === cat.id ? 'var(--accent)' : 'transparent',
               color: activeCategory === cat.id ? '#fff' : 'var(--text-secondary)',
               border: 'none', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              transition: 'all 0.2s'
+              transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
             }}
           >
             <cat.icon size={14} />
@@ -137,8 +146,8 @@ const ExploreSection = ({ user }) => {
                 {college.name.charAt(0)}
               </div>
               <h5 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700 }}>{college.name}</h5>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
-                {college.students} students
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                {college.students.toLocaleString()} students
               </p>
             </motion.div>
           ))}
@@ -162,11 +171,21 @@ const ExploreSection = ({ user }) => {
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: 40 }}>🔍</p>
-            <p style={{ fontSize: 15, fontWeight: 600 }}>No posts to explore yet</p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}
+          >
+            <div style={{
+              width: 72, height: 72, borderRadius: 20, margin: '0 auto 16px',
+              background: 'var(--bg-tertiary)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Search size={32} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+            </div>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>No posts to explore yet</p>
             <p style={{ fontSize: 13 }}>Be the first to share something amazing!</p>
-          </div>
+          </motion.div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
             {posts.map((post, i) => (
@@ -183,7 +202,8 @@ const ExploreSection = ({ user }) => {
                   <img
                     src={`http://localhost:8095${post.imageUrl}`}
                     style={{ width: '100%', height: 140, objectFit: 'cover' }}
-                    alt=""
+                    alt={`Post by ${post.username}`}
+                    loading="lazy"
                   />
                 ) : (
                   <div style={{
@@ -207,9 +227,13 @@ const ExploreSection = ({ user }) => {
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 600 }}>{post.username}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-muted)' }}>
-                    <span>❤️ {post.likeCount || 0}</span>
-                    <span>💬 {post.commentCount || 0}</span>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Heart size={12} /> {post.likeCount || 0}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <MessageCircle size={12} /> {post.commentCount || 0}
+                    </span>
                   </div>
                 </div>
               </motion.div>

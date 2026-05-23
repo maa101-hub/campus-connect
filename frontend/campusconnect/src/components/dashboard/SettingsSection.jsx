@@ -37,13 +37,13 @@ const SettingsSection = ({ user }) => {
       className="dash-feed"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       style={{ padding: '0 24px 40px' }}
     >
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 6px 0' }}>
-          <Settings size={24} style={{ display: 'inline', marginRight: 10, color: 'var(--accent)' }} />
+        <h2 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '-0.02em' }}>
+          <Settings size={24} style={{ color: 'var(--accent)' }} />
           Settings
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
@@ -51,7 +51,19 @@ const SettingsSection = ({ user }) => {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24 }}>
+      <style>{`
+        .settings-grid {
+          display: grid;
+          grid-template-columns: 260px 1fr;
+          gap: 24px;
+        }
+        @media (max-width: 768px) {
+          .settings-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+      <div className="settings-grid">
         {/* Settings Nav */}
         <div className="post-card" style={{ padding: 12, margin: 0, height: 'fit-content' }}>
           {sections.map((section, i) => (
@@ -66,7 +78,8 @@ const SettingsSection = ({ user }) => {
                 padding: '14px 16px', borderRadius: 12, border: 'none',
                 background: activeSection === section.id ? 'var(--accent-light)' : 'transparent',
                 color: activeSection === section.id ? 'var(--accent)' : 'var(--text-secondary)',
-                cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+                cursor: 'pointer', textAlign: 'left', 
+                transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
               }}
             >
               <section.icon size={18} />
@@ -268,22 +281,26 @@ const ToggleRow = ({ label, checked, onChange }) => (
     padding: '12px 0', borderBottom: '1px solid var(--border-light)'
   }}>
     <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{label}</span>
-    <div
+    <button
       onClick={onChange}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       style={{
         width: 44, height: 24, borderRadius: 12,
         background: checked ? 'var(--accent)' : 'var(--bg-tertiary)',
         border: checked ? 'none' : '1px solid var(--border-color)',
-        position: 'relative', cursor: 'pointer', transition: 'all 0.2s'
+        position: 'relative', cursor: 'pointer', 
+        transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
       }}
     >
       <div style={{
         width: 18, height: 18, borderRadius: '50%',
         background: '#fff', position: 'absolute', top: 3,
-        left: checked ? 23 : 3, transition: 'left 0.2s',
+        left: checked ? 23 : 3, transition: 'left 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
         boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
       }} />
-    </div>
+    </button>
   </div>
 );
 

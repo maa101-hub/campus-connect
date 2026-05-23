@@ -101,7 +101,7 @@ const EventsSection = ({ user }) => {
       className="dash-feed"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       style={{ padding: '0 24px 40px' }}
     >
       {/* Header */}
@@ -131,19 +131,18 @@ const EventsSection = ({ user }) => {
       </div>
 
       {/* Category Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap', background: 'var(--bg-tertiary)', padding: 5, borderRadius: 14, width: 'fit-content' }}>
         {CATEGORIES.map(cat => (
           <motion.button
             key={cat.id}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveCategory(cat.id)}
             style={{
-              padding: '7px 16px', borderRadius: 20,
-              background: activeCategory === cat.id ? cat.color : 'var(--bg-tertiary)',
+              padding: '7px 16px', borderRadius: 10,
+              background: activeCategory === cat.id ? cat.color : 'transparent',
               color: activeCategory === cat.id ? '#fff' : 'var(--text-secondary)',
               border: 'none', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', transition: 'all 0.2s'
+              cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
             }}
           >
             {cat.label}
@@ -236,7 +235,7 @@ const EventsSection = ({ user }) => {
                         <MapPin size={14} /> {event.location}
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                       <Users size={14} /> {event.rsvpCount}/{event.maxAttendees} attending
                     </div>
                   </div>
@@ -256,7 +255,7 @@ const EventsSection = ({ user }) => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleRsvp(event.id)}
-                    disabled={isFull && !isRsvpd || rsvpLoading[event.id]}
+                    disabled={(isFull && !isRsvpd) || rsvpLoading[event.id]}
                     style={{
                       width: '100%', padding: '11px 0', borderRadius: 12,
                       background: isRsvpd ? 'rgba(34, 197, 94, 0.1)' : (isFull ? 'var(--bg-tertiary)' : catColor),
@@ -346,10 +345,18 @@ const CreateEventModal = ({ user, onClose, onCreated }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
-    }}>
+    <div 
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Create event"
+      tabIndex={-1}
+    >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { TrendingUp, Calendar, Users, GraduationCap } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 
 const TRENDING = [
@@ -43,8 +44,10 @@ const RightSidebar = ({ user }) => {
       {/* Trending */}
       <div className="right-card">
         <h3 className="right-card-title">
-          🔥 Trending
-          <a>See all</a>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <TrendingUp size={14} style={{ color: 'var(--accent)' }} /> Trending
+          </span>
+          <button style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 500, color: 'var(--accent)', cursor: 'pointer' }}>See all</button>
         </h3>
         {TRENDING.map((item, i) => (
           <motion.div
@@ -62,8 +65,10 @@ const RightSidebar = ({ user }) => {
       {/* Events */}
       <div className="right-card">
         <h3 className="right-card-title">
-          📅 Upcoming Events
-          <a>View all</a>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Calendar size={14} style={{ color: 'var(--accent)' }} /> Upcoming Events
+          </span>
+          <button style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 500, color: 'var(--accent)', cursor: 'pointer' }}>View all</button>
         </h3>
         {EVENTS.map((ev, i) => (
           <motion.div
@@ -87,8 +92,10 @@ const RightSidebar = ({ user }) => {
       {/* Suggestions */}
       <div className="right-card">
         <h3 className="right-card-title">
-          👥 Students to Connect
-          <a>See more</a>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Users size={14} style={{ color: 'var(--accent)' }} /> Students to Connect
+          </span>
+          <button style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 500, color: 'var(--accent)', cursor: 'pointer' }}>See more</button>
         </h3>
         {SUGGESTIONS.map((s, i) => {
           const initials = s.name.split(' ').map(w => w[0]).join('');
@@ -102,7 +109,7 @@ const RightSidebar = ({ user }) => {
               <div className="suggest-avatar" style={{ background: s.color }}>{initials}</div>
               <div className="suggest-info">
                 <h5>{s.name}</h5>
-                <p>🎓 {s.college}</p>
+                <p><GraduationCap size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{s.college}</p>
               </div>
               <motion.button
                 className="connect-btn"
