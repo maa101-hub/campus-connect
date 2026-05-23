@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Search, Users, TrendingUp, Hash, X, Heart, MessageCircle, Code, Calendar, Trophy, Palette, GraduationCap } from 'lucide-react';
+import { Compass, Search, Users, TrendingUp, X, Heart, MessageCircle, Code, Calendar, Trophy, Palette, GraduationCap } from 'lucide-react';
 import postService from '../../api/postService';
 
 const CATEGORIES = [

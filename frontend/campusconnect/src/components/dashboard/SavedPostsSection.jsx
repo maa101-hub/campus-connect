@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Heart, MessageCircle, Trash2, FolderOpen, Clock, Search, Filter, BookmarkCheck, X } from 'lucide-react';
-import postService from '../../api/postService';
+
+// Skeleton loader (declared outside component to avoid re-creation on render)
+const SavedSkeleton = () => (
+  <div className="post-card" style={{ padding: 20, margin: 0, display: 'flex', gap: 16 }}>
+    <div className="skeleton" style={{ width: 100, height: 80, borderRadius: 12, flexShrink: 0 }} />
+    <div style={{ flex: 1 }}>
+      <div className="skeleton" style={{ width: '80%', height: 14, marginBottom: 8 }} />
+      <div className="skeleton" style={{ width: '60%', height: 14, marginBottom: 12 }} />
+      <div className="skeleton" style={{ width: '40%', height: 10 }} />
+    </div>
+  </div>
+);
 
 const SavedPostsSection = ({ user }) => {
   const [savedPosts, setSavedPosts] = useState([]);
@@ -17,9 +28,11 @@ const SavedPostsSection = ({ user }) => {
   ];
 
   // Load saved posts from localStorage (future: backend API)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     const timer = setTimeout(() => {
+      if (cancelled) return;
       try {
         const stored = localStorage.getItem(`saved_posts_${user?.id}`);
         if (stored) {
@@ -30,8 +43,9 @@ const SavedPostsSection = ({ user }) => {
       }
       setLoading(false);
     }, 300);
-    return () => clearTimeout(timer);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [user?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRemoveSaved = (postId) => {
     setRemovingId(postId);
@@ -73,18 +87,6 @@ const SavedPostsSection = ({ user }) => {
     for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
   };
-
-  // Skeleton loader
-  const SavedSkeleton = () => (
-    <div className="post-card" style={{ padding: 20, margin: 0, display: 'flex', gap: 16 }}>
-      <div className="skeleton" style={{ width: 100, height: 80, borderRadius: 12, flexShrink: 0 }} />
-      <div style={{ flex: 1 }}>
-        <div className="skeleton" style={{ width: '80%', height: 14, marginBottom: 8 }} />
-        <div className="skeleton" style={{ width: '60%', height: 14, marginBottom: 12 }} />
-        <div className="skeleton" style={{ width: '40%', height: 10 }} />
-      </div>
-    </div>
-  );
 
   return (
     <motion.div
