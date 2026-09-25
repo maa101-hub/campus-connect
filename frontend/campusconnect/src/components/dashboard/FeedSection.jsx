@@ -157,7 +157,7 @@ const PostCard = ({ post, index, user }) => {
       {post.imageUrl && (
         <img 
           className="post-image" 
-          src={post.imageUrl.startsWith('/') ? `http://localhost:8095${post.imageUrl}` : post.imageUrl} 
+          src={post.imageUrl} 
           alt={`Post by ${post.username}`}
           loading="lazy"
           width={600}

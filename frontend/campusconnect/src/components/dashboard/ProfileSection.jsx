@@ -140,7 +140,7 @@ const ProfileSection = ({ user }) => {
           >
             {user?.profilePhotoUrl ? (
               <img 
-                src={`http://localhost:8095${user.profilePhotoUrl}`} 
+                src={user.profilePhotoUrl} 
                 alt={user.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 26 }}
               />
@@ -291,7 +291,7 @@ const ProfileSection = ({ user }) => {
                     }}
                   >
                     {post.imageUrl ? (
-                      <img src={`http://localhost:8095${post.imageUrl}`} alt="Post content" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                      <img src={post.imageUrl} alt="Post content" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
                     ) : (
                       <div style={{ 
                         height: 180, background: 'var(--bg-tertiary)', 

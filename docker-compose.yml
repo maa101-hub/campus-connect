@@ -51,27 +51,6 @@ services:
     networks:
       - campus-network
 
-  # ─── API Gateway ──────────────────────────────────────────
-  api-gateway:
-    build: ./backend/api-gateway
-    container_name: campus-gateway
-    ports:
-      - "8095:8095"
-    environment:
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      FRONTEND_URL: http://localhost:3000
-      API_GATEWAY_PORT: 8095
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8095/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    networks:
-      - campus-network
-
   # ─── User Service ─────────────────────────────────────────
   user-service:
     build: ./backend/user-service
@@ -154,7 +133,9 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      api-gateway:
+      user-service:
+        condition: service_healthy
+      post-service:
         condition: service_healthy
     networks:
       - campus-network

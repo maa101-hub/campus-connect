@@ -12,12 +12,18 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
+        // Post service (API gateway removed — route directly)
+        '/api/posts': {
+          target: 'http://localhost:8082',
+          changeOrigin: true,
+        },
+        // Everything else under /api → user-service
         '/api': {
-          target: 'http://localhost:8095',
+          target: 'http://localhost:8081',
           changeOrigin: true,
         },
         '/ws': {
-          target: 'http://localhost:8095',
+          target: 'http://localhost:8081',
           ws: true,
         },
       },

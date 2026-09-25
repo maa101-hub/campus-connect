@@ -200,7 +200,7 @@ const ExploreSection = ({ user }) => {
               >
                 {post.imageUrl ? (
                   <img
-                    src={`http://localhost:8095${post.imageUrl}`}
+                    src={post.imageUrl}
                     style={{ width: '100%', height: 140, objectFit: 'cover' }}
                     alt={`Post by ${post.username}`}
                     loading="lazy"

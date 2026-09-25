@@ -80,8 +80,10 @@ const MessagingSection = ({ user, initialRecipient = null }) => {
     fetchContacts();
 
     const token = localStorage.getItem('token');
-    // Connect WebSocket directly to user-service (not through gateway) to avoid duplicate CORS headers
-    const socket = new SockJS(`http://localhost:8081/ws?token=${token}`);
+    // Connect WebSocket to the same origin; nginx (prod) / vite proxy (dev)
+    // forwards /ws to the user-service. API gateway has been removed.
+    const wsBase = import.meta.env.VITE_WS_URL || window.location.origin;
+    const socket = new SockJS(`${wsBase}/ws?token=${token}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
