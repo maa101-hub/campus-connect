@@ -50,7 +50,10 @@ const useAuthStore = create((set, get) => ({
     try {
       const response = await authService.signup(userData);
       if (response.success) {
-        set({ isLoading: false });
+        // Account creation auto-logs in — token was saved by authService.
+        const token = response.data?.token || localStorage.getItem('token');
+        set({ token, isAuthenticated: true, isLoading: false });
+        await get().fetchUser();
         return { success: true };
       }
       set({ isLoading: false, error: response.message });
@@ -65,23 +68,6 @@ const useAuthStore = create((set, get) => ({
   logout: () => {
     localStorage.removeItem('token');
     set({ user: null, token: null, isAuthenticated: false });
-  },
-
-  verifyOtp: async (email, otp) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await authService.verifyOtp(email, otp);
-      if (response.success) {
-        set({ isLoading: false });
-        return { success: true };
-      }
-      set({ isLoading: false, error: response.message });
-      return { success: false, message: response.message };
-    } catch (error) {
-      const message = typeof error === 'string' ? error : error.message || 'Verification failed';
-      set({ error: message, isLoading: false });
-      return { success: false, message };
-    }
   },
 
   checkAuth: async () => {

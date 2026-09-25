@@ -25,9 +25,6 @@ public class OtpServiceImpl implements OtpService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private EmailService emailService;
-
     @Override
     public void sendOtp(String email) {
         log.info("Generating OTP for email: {}", email);
@@ -42,10 +39,8 @@ public class OtpServiceImpl implements OtpService {
 
         otpRepository.save(otpEntity);
 
-        // Deliver the OTP to the user's inbox
-        emailService.sendOtpEmail(email, otp);
-
-        log.info("OTP generated and emailed for email: {}", email);
+        // Email sending removed. OTP is logged for password-reset flows only.
+        log.info("OTP generated for {} (reset flow): {}", email, otp);
     }
 
     @Override

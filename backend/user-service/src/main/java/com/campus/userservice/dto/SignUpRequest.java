@@ -22,7 +22,7 @@ public class SignUpRequest {
     )
     private String password;
 
-    @NotNull(message = "College ID is required")
+    // Optional — a random value is assigned by the backend if not provided.
     private Long collegeId;
 
     @NotBlank(message = "College name is required")

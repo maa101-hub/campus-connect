@@ -145,16 +145,13 @@ const FormInput = ({ id, type = 'text', placeholder, value, onChange, error }) =
 // ─── SignupSection — fixed fullscreen modal ───────────────────────────────────
 const SignupSection = ({ onClose }) => {
   const [tab, setTab] = useState('signup');
-  const [step, setStep] = useState(1);
-  const [otp, setOtp] = useState('');
   const [signup, setSignup] = useState({ 
     name: '', 
     email: '', 
     username: '',
     password: '', 
     confirm: '',
-    collegeName: '',
-    collegeId: ''
+    collegeName: ''
   });
   const [login, setLogin]   = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
@@ -193,26 +190,17 @@ const SignupSection = ({ onClose }) => {
     return () => window.removeEventListener('keydown', fn);
   }, [onClose]);
 
-  const validate = (currentStep = null) => {
+  const validate = () => {
     const e = {};
     if (tab === 'signup') {
-      if (!currentStep || currentStep === 1) {
-        if (!signup.name.trim())                      e.name     = 'Name is required';
-        if (!signup.email.includes('@'))               e.email    = 'Enter a valid email';
-        if (signup.username.length < 4)               e.username = 'Min 4 characters';
-        if (signup.password.length < 8)               e.password = 'Min 8 characters';
-        if (!/(?=.*[A-Z])(?=.*[0-9])/.test(signup.password)) e.password = 'Need uppercase & number';
-        if (signup.confirm !== signup.password)        e.confirm  = 'Passwords do not match';
-      }
-      
-      if (!currentStep || currentStep === 2) {
-        if (!signup.collegeName.trim())               e.collegeName = 'College name required';
-        if (!signup.collegeId)                        e.collegeId   = 'College ID required';
-      }
-
-      if (currentStep === 3) {
-        if (otp.length < 6)                            e.otp = 'OTP must be 6 digits';
-      }
+      if (!signup.name.trim())                      e.name     = 'Name is required';
+      if (!signup.email.includes('@'))               e.email    = 'Enter a valid email';
+      if (signup.username.length < 4)               e.username = 'Min 4 characters';
+      if (signup.password.length < 8)               e.password = 'Min 8 characters';
+      else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])/.test(signup.password))
+        e.password = 'Add upper, lower, number & special char (@#$%^&+=!)';
+      if (signup.confirm !== signup.password)        e.confirm  = 'Passwords do not match';
+      if (!signup.collegeName.trim())               e.collegeName = 'College name required';
     } else {
       if (!login.email.includes('@'))  e.lemail    = 'Enter a valid email';
       if (!login.password)             e.lpassword = 'Password required';
@@ -220,30 +208,31 @@ const SignupSection = ({ onClose }) => {
     return e;
   };
 
-  const { login: performLogin, signup: performSignup, verifyOtp: performVerify, isLoading: loading, error: authError } = useAuthStore();
+  const { login: performLogin, signup: performSignup, isLoading: loading, error: authError } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleNext = () => {
-    const e = validate(1);
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setErrors({});
-    setStep(2);
-  };
-
   const handleSubmit = async () => {
-    const e = validate(2);
+    const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
 
     try {
       if (tab === 'signup') {
-        const submissionData = {
-          ...signup,
-          collegeId: parseInt(signup.collegeId, 10)
-        };
-        const res = await performSignup(submissionData);
+        // One-step signup — account is created and auto-logged-in.
+        const res = await performSignup({
+          name: signup.name,
+          email: signup.email,
+          username: signup.username,
+          password: signup.password,
+          collegeName: signup.collegeName,
+        });
         if (res.success) {
-          setStep(3); // Go to OTP step
+          setSuccess(true);
+          setTimeout(() => {
+            setSuccess(false);
+            onClose();
+            navigate('/dashboard');
+          }, 1200);
         } else {
           setErrors({ general: res.message || 'Signup failed' });
         }
@@ -262,30 +251,6 @@ const SignupSection = ({ onClose }) => {
       }
     } catch {
       setErrors({ general: 'Connection failed' });
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    const e = validate(3);
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setErrors({});
-
-    try {
-      const res = await performVerify(signup.email, otp);
-      if (res.success) {
-        setSuccess(true);
-        setTimeout(() => { 
-          setSuccess(false); 
-          setTab('login');
-          setStep(1);
-          setSignup({ name: '', email: '', username: '', password: '', confirm: '', collegeName: '', collegeId: '' });
-          setOtp('');
-        }, 1500);
-      } else {
-        setErrors({ general: res.message || 'Invalid OTP' });
-      }
-    } catch {
-      setErrors({ general: 'Verification failed' });
     }
   };
 
@@ -507,58 +472,19 @@ const SignupSection = ({ onClose }) => {
             <AnimatePresence mode="wait">
               {tab === 'signup' ? (
                 <motion.div 
-                  key={`signup-step-${step}`} 
+                  key="signup-fields" 
                   initial={{ opacity: 0, x: 20 }} 
                   animate={{ opacity: 1, x: 0 }} 
                   exit={{ opacity: 0, x: -20 }} 
                   transition={{ duration: 0.3 }}
                   style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                      Step {step} of 3
-                    </span>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <div style={{ width: 24, height: 4, borderRadius: 2, background: step >= 1 ? '#7C3AED' : 'rgba(255,255,255,0.1)' }} />
-                      <div style={{ width: 24, height: 4, borderRadius: 2, background: step >= 2 ? '#7C3AED' : 'rgba(255,255,255,0.1)' }} />
-                      <div style={{ width: 24, height: 4, borderRadius: 2, background: step >= 3 ? '#7C3AED' : 'rgba(255,255,255,0.1)' }} />
-                    </div>
-                  </div>
-
-                  {step === 1 ? (
-                    <>
-                      <FormInput id="modal-name"     placeholder="Full Name"   value={signup.name}     onChange={setS('name')}     error={errors.name} />
-                      <FormInput id="modal-email"    type="email"    placeholder="College Email"  value={signup.email}    onChange={setS('email')}    error={errors.email} />
-                      <FormInput id="modal-username" placeholder="Choose Username" value={signup.username} onChange={setS('username')} error={errors.username} />
-                      <FormInput id="modal-password" type="password" placeholder="Password (8+ chars, A-Z, 0-9)" value={signup.password} onChange={setS('password')} error={errors.password} />
-                      <FormInput id="modal-confirm"  type="password" placeholder="Confirm Password"  value={signup.confirm}  onChange={setS('confirm')}  error={errors.confirm} />
-                    </>
-                  ) : step === 2 ? (
-                    <>
-                      <div style={{ padding: '8px 4px', marginBottom: 4 }}>
-                        <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>Almost there! Tell us where you study.</p>
-                      </div>
-                      <FormInput id="modal-college"  placeholder="College Name" value={signup.collegeName} onChange={setS('collegeName')} error={errors.collegeName} />
-                      <FormInput id="modal-college-id" type="number" placeholder="College ID Number" value={signup.collegeId} onChange={setS('collegeId')} error={errors.collegeId} />
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ padding: '8px 4px', marginBottom: 4 }}>
-                        <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>We've sent an OTP to {signup.email}.</p>
-                      </div>
-                      <FormInput 
-                        id="modal-otp" 
-                        type="text" 
-                        placeholder="Enter 6-digit OTP" 
-                        value={otp} 
-                        onChange={(e) => setOtp(e.target.value)} 
-                        error={errors.otp} 
-                      />
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-                        Check your server logs to see the OTP for now!
-                      </p>
-                    </>
-                  )}
+                  <FormInput id="modal-name"     placeholder="Full Name"   value={signup.name}     onChange={setS('name')}     error={errors.name} />
+                  <FormInput id="modal-email"    type="email"    placeholder="College Email"  value={signup.email}    onChange={setS('email')}    error={errors.email} />
+                  <FormInput id="modal-username" placeholder="Choose Username" value={signup.username} onChange={setS('username')} error={errors.username} />
+                  <FormInput id="modal-password" type="password" placeholder="Password (8+ chars: A-z, 0-9, @#$)" value={signup.password} onChange={setS('password')} error={errors.password} />
+                  <FormInput id="modal-confirm"  type="password" placeholder="Confirm Password"  value={signup.confirm}  onChange={setS('confirm')}  error={errors.confirm} />
+                  <FormInput id="modal-college"  placeholder="College Name" value={signup.collegeName} onChange={setS('collegeName')} error={errors.collegeName} />
                 </motion.div>
               ) : (
                 <motion.div key="login-fields" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}
@@ -588,40 +514,20 @@ const SignupSection = ({ onClose }) => {
 
             {/* Submit row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-              {tab === 'signup' && step === 2 ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Manrope', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                  Back
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (tab === 'signup') {
-                      setTab('login');
-                    } else {
-                      setTab('signup');
-                      setStep(1);
-                    }
-                    setErrors({});
-                  }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Manrope', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 }}
-                >
-                  {tab === 'signup' ? 'Already have an account?' : "Don't have an account?"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setTab(tab === 'signup' ? 'login' : 'signup');
+                  setErrors({});
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Manrope', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 }}
+              >
+                {tab === 'signup' ? 'Already have an account?' : "Don't have an account?"}
+              </button>
 
               <motion.button
                 id="modal-submit-btn"
-                onClick={
-                  tab === 'signup' 
-                    ? (step === 1 ? handleNext : (step === 2 ? handleSubmit : handleVerifyOtp)) 
-                    : handleSubmit
-                }
+                onClick={handleSubmit}
                 disabled={loading}
                 whileHover={{ scale: 1.05, boxShadow: '0 0 32px rgba(124,58,237,0.65)' }}
                 whileTap={{ scale: 0.97 }}
@@ -646,7 +552,7 @@ const SignupSection = ({ onClose }) => {
                   </>
                 ) : (
                   <>
-                    {tab === 'signup' ? (step === 1 ? 'Next Step' : 'Create Account') : 'Log In'}
+                    {tab === 'signup' ? 'Create Account' : 'Log In'}
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
