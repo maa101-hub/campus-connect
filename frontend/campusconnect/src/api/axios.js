@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8095',
+  // Default to relative paths so requests hit the same origin (nginx in prod,
+  // vite dev-server proxy in dev), which routes /api/* to the backend services.
+  // The API gateway has been removed.
+  baseURL: import.meta.env.VITE_API_URL || '',
   headers: {
     'Content-Type': 'application/json',
   },

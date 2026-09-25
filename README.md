@@ -82,20 +82,24 @@
                                     ┌─────────────────────────┐
                                     │    Service Discovery    │
                                     │    Eureka (8761)        │
-                                    └────────────┬────────────┘
-                                                 │ register/discover
-┌──────────────┐    ┌──────────────┐    ┌────────┴────────┐
-│   Browser    │───▶│    Nginx     │───▶│   API Gateway   │
-│              │    │  (Port 80)   │    │   (Port 8095)   │
-│              │    │  + Security  │    │   + CORS        │
-│              │    │  + Gzip      │    │   + Routing     │
-└──────────────┘    │  + Rate Limit│    └───────┬─────────┘
-                    └──────────────┘            │
+                                    │    (optional)           │
+                                    └─────────────────────────┘
+
+┌──────────────┐    ┌───────────────────────┐
+│   Browser    │───▶│         Nginx         │
+│              │    │       (Port 80)       │
+│              │    │  + Security + Gzip     │
+│              │    │  + Rate Limit          │
+│              │    │  + Path-based routing  │
+└──────────────┘    └───────────┬───────────┘
+                                │  routes /api/* directly (no gateway)
                               ┌─────────────────┼─────────────────┐
                               ▼                                   ▼
                     ┌─────────────────┐              ┌─────────────────┐
                     │  User Service   │              │  Post Service   │
                     │   (Port 8081)   │              │   (Port 8082)   │
+                    │  /api/auth,user │              │   /api/posts    │
+                    │  msgs,ws,uploads│              │                 │
                     ├─────────────────┤              ├─────────────────┤
                     │ • Auth (JWT)    │              │ • Posts CRUD    │
                     │ • Users         │              │ • Comments      │
@@ -128,8 +132,8 @@
 | **Database** | PostgreSQL | 16 |
 | **Cache** | Redis | 7 |
 | **Messaging** | WebSocket (STOMP + SockJS) | — |
-| **Discovery** | Netflix Eureka | — |
-| **Gateway** | Spring Cloud Gateway | — |
+| **Discovery** | Netflix Eureka (optional) | — |
+| **Routing** | Nginx (path-based, direct to services) | — |
 | **Auth** | JWT (jjwt) | 0.11.5 |
 | **Icons** | Lucide React | 1.12 |
 | **DevOps** | Docker, Docker Compose, GitHub Actions | — |
@@ -163,8 +167,9 @@ cp .env.example .env
 docker compose up --build
 
 # Access the app:
-# Frontend:        http://localhost:3000
-# API Gateway:     http://localhost:8095
+# Frontend:        http://localhost:3000  (nginx routes /api/* to the services)
+# User Service:    http://localhost:8081
+# Post Service:    http://localhost:8082
 # Eureka Dashboard: http://localhost:8761
 ```
 
@@ -197,10 +202,11 @@ cd backend/user-service && ./mvnw spring-boot:run
 
 # Terminal 3 — Post Service
 cd backend/post-service && ./mvnw spring-boot:run
-
-# Terminal 4 — API Gateway
-cd backend/api-gateway && ./mvnw spring-boot:run
 ```
+
+> The API gateway has been removed. In development the Vite dev-server proxy
+> routes `/api/posts/**` to the post-service (8082) and everything else under
+> `/api` plus `/ws` and `/uploads` to the user-service (8081).
 
 #### 4. Frontend
 
@@ -220,8 +226,7 @@ npm run dev
 ```
 campus-connect/
 ├── backend/
-│   ├── api-gateway/          # Spring Cloud Gateway (8095)
-│   ├── discovery-server/     # Eureka Server (8761)
+│   ├── discovery-server/     # Eureka Server (8761, optional)
 │   ├── user-service/         # Auth, Users, Messaging, Events (8081)
 │   └── post-service/         # Posts, Comments, Likes, Upload (8082)
 ├── frontend/
@@ -355,7 +360,6 @@ campus-connect/
 | `postgres` | 5432 | `pg_isready` |
 | `redis` | 6379 | `redis-cli ping` |
 | `discovery-server` | 8761 | `/actuator/health` |
-| `api-gateway` | 8095 | `/actuator/health` |
 | `user-service` | 8081 | `/actuator/health` |
 | `post-service` | 8082 | `/actuator/health` |
 | `frontend` | 3000 | HTTP 200 on `/` |
@@ -376,7 +380,7 @@ The GitHub Actions workflow runs on every push/PR:
 | Authentication | JWT with BCrypt password hashing |
 | Email Verification | OTP via SMTP (Gmail) |
 | File Upload | Type validation, size limits, path traversal protection |
-| CORS | Configured per-origin on API Gateway |
+| CORS | Same-origin — Nginx proxies /api/* to the services |
 | Headers | X-Frame-Options, X-Content-Type-Options, XSS-Protection |
 | Rate Limiting | 30 req/s per IP via Nginx |
 | Actuator | Restricted to health/info/metrics endpoints |

@@ -61,7 +61,7 @@
 |---|-----------|---------------|
 | 1 | Real-time messaging on a single DB | WebSocket STOMP + SockJS; messages persist in PostgreSQL, delivered via in-memory broker |
 | 2 | No college verification API exists | Email OTP verification; IdCard entity for future admin verification |
-| 3 | Solo developer, many features | Split into microservices: user-service, post-service, api-gateway, discovery-server |
+| 3 | Solo developer, many features | Split into microservices: user-service, post-service, discovery-server; Nginx handles path-based routing directly (gateway removed for deploy reliability) |
 | 4 | No external auth provider (Keycloak/Auth0) | Custom JWT (jjwt); both services validate independently via shared secret |
 | 5 | Must deploy anywhere (dev/CI/cloud) | Full Docker Compose with health checks, depends_on, named volumes, env-driven config |
 | 6 | Low-end devices (budget phones, slow 4G) | Vite 8 + Tailwind (no heavy UI libs) + Nginx Gzip + 1-year static cache + rate limiting |
@@ -123,22 +123,16 @@
 │  • Reverse proxy    • Rate limit (30 req/s)  • Security headers │
 │  • Gzip             • Static cache (1yr)     • SPA fallback     │
 └─────────────────┬────────────────────────┬───────────────────────┘
-                  │ /api/*                 │ /ws/*
-                  ▼                        ▼
-┌──────────────────────────────────────────────────────────────────┐
-│            API GATEWAY — Spring Cloud Gateway (8095)              │
-│  • /api/auth,users,messages,connections,events → user-service    │
-│  • /api/posts/** → post-service                                  │
-│  • /ws/** → user-service (WebSocket)                             │
-│  • CORS config     • Load balancing (lb://service-name)          │
-└────────┬────────────────────────────────────────────┬────────────┘
+                  │ path-based routing (no gateway)
+                  │  • /api/posts/** → post-service (8082)
+                  │  • /api/**, /ws/**, /uploads/** → user-service (8081)
+         ┌────────┴────────────────────────────────────┬────────────┐
          │                                            │
          │    ┌───────────────────────────────┐       │
          │    │  DISCOVERY SERVER (Eureka)    │       │
-         │    │  Port 8761 • Service registry │       │
+         │    │  Port 8761 • optional         │       │
          │    └───────────────────────────────┘       │
-         │         ▲ register      ▲ register         │
-         ▼         │               │                  ▼
+         ▼                                            ▼
 ┌──────────────────────┐    ┌─────────────────────────────┐
 │  USER SERVICE (8081) │    │    POST SERVICE (8082)      │
 ├──────────────────────┤    ├─────────────────────────────┤
@@ -169,14 +163,11 @@
 **1. Client Layer:**
 > React 19 SPA built with Vite. REST APIs for data, WebSocket for real-time.
 
-**2. Nginx:**
-> Serves static React build, proxies /api/* to Gateway, proxies /ws/* for WebSocket. Handles Gzip, security headers, rate limiting, 1-year cache.
+**2. Nginx (single entry point):**
+> Serves the static React build and reverse-proxies by URL path directly to the backend services (the Spring Cloud Gateway was removed because `lb://` service discovery was unreliable in deployment). `/api/posts/**` → post-service; `/api/**`, `/ws/**`, `/uploads/**` → user-service. Handles Gzip, security headers, rate limiting, 1-year cache. Because everything is same-origin, no cross-origin CORS handling is required.
 
-**3. API Gateway (Spring Cloud Gateway):**
-> Single entry point. Routes by URL path. Uses Eureka for service discovery. Load balances with lb:// prefix.
-
-**4. Discovery Server (Eureka):**
-> Each microservice registers at startup. Gateway discovers dynamically. If user-service scales to 3 instances, Gateway auto-load-balances.
+**3. Discovery Server (Eureka) — optional:**
+> Services can still register for observability, but routing no longer depends on it. Nginx addresses services by their Docker Compose service name, so the stack runs even if Eureka is down.
 
 **5. User Service (8081) — Largest service:**
 > Auth (signup/login/JWT), profiles, OTP verification, real-time messaging (WebSocket), connections, events+RSVP, notifications.
@@ -194,19 +185,17 @@
 | Shared DB, separate services | Simplicity now; can split later |
 | JWT validated per service | No inter-service auth calls = low latency |
 | WebSocket only in user-service | Post-service doesn't need real-time |
-| Eureka for discovery | Dynamic registration, auto-scaling support |
-| Nginx in front of Gateway | Offloads compression/caching from Java |
+| Eureka for discovery (optional) | Dynamic registration; routing no longer depends on it |
+| Nginx does path-based routing | Offloads compression/caching from Java and removes the gateway hop |
 
 ### Request Flow Example (great for whiteboard):
 
 > "When a user creates a post:"
 > 1. React sends POST /api/posts with JWT in Authorization header
-> 2. Nginx proxies to API Gateway (8095)
-> 3. Gateway matches /api/posts/** → forwards to lb://post-service
-> 4. Eureka resolves post-service → localhost:8082
-> 5. Post-service JwtAuthFilter extracts & validates JWT
-> 6. PostController → PostServiceImpl → PostRepository.save()
-> 7. Response flows back: post-service → gateway → nginx → browser
+> 2. Nginx matches /api/posts/** → proxies directly to post-service (8082)
+> 3. Post-service JwtAuthFilter extracts & validates JWT
+> 4. PostController → PostServiceImpl → PostRepository.save()
+> 5. Response flows back: post-service → nginx → browser
 
 ---
 

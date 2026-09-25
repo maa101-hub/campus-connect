@@ -290,7 +290,7 @@ const SavedPostsSection = ({ user }) => {
                 {/* Thumbnail or avatar */}
                 {post.imageUrl ? (
                   <img
-                    src={post.imageUrl.startsWith('/') ? `http://localhost:8095${post.imageUrl}` : post.imageUrl}
+                    src={post.imageUrl}
                     style={{
                       width: 96, height: 76, objectFit: 'cover', borderRadius: 12,
                       flexShrink: 0, background: 'var(--bg-tertiary)',
