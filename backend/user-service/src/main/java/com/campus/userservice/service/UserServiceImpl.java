@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
 	private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
 	@Override
-	public User registerUser(SignUpRequest request) {
+	public LoginResponse registerUser(SignUpRequest request) {
 		log.info("Registering user with email: {}", request.getEmail());
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new DuplicateResourceException("Email already exists");
@@ -49,17 +49,26 @@ public class UserServiceImpl implements UserService {
 		user.setEmail(request.getEmail());
 		user.setUsername(request.getUsername());
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
-		user.setCollegeId(request.getCollegeId());
+		// College ID is optional now — assign a random one if not provided.
+		Long collegeId = request.getCollegeId() != null
+				? request.getCollegeId()
+				: (long) (100000 + new java.util.Random().nextInt(900000));
+		user.setCollegeId(collegeId);
 		user.setCollegeName(request.getCollegeName());
-		user.setVerificationStatus(VerificationStatus.PENDING);
-		user.setEmailVerified(false);
+		user.setVerificationStatus(VerificationStatus.APPROVED);
+		// OTP/email verification removed — accounts are usable immediately.
+		user.setEmailVerified(true);
 		user.setRole(Role.USER);
 		user.setCreatedAt(LocalDateTime.now());
 		user.setUpdatedAt(LocalDateTime.now());
 
-		User savedUser = userRepository.save(user);
-		otpService.sendOtp(user.getEmail());
-		return savedUser;
+		userRepository.save(user);
+
+		// Auto-login: issue a JWT so the user goes straight to the dashboard.
+		String token = jwtUtil.generateToken(user.getEmail());
+		LoginResponse response = new LoginResponse();
+		response.setToken(token);
+		return response;
 	}
 
 	@Override

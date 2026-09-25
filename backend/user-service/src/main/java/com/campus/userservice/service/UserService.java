@@ -14,7 +14,7 @@ import com.campus.userservice.entity.User;
 import java.util.List;
 
 public interface UserService {
-    User registerUser(SignUpRequest request);
+    LoginResponse registerUser(SignUpRequest request);
     LoginResponse loginUser(LoginRequest request);
     UserResponse getCurrentUser(String email);
     UserResponse updateProfile(String email, UpdateProfileRequest request);
