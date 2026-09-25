@@ -14,7 +14,7 @@
       "destination": "https://campus-connect-2-wszu.onrender.com/uploads/:path*"
     },
     {
-      "source": "/((?!api/|uploads/|assets/|.*\\..*).*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
