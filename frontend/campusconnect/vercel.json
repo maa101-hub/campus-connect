@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/posts/:path*",
+      "destination": "https://campus-connect-3-3xwb.onrender.com/api/posts/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://campus-connect-2-wszu.onrender.com/api/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://campus-connect-2-wszu.onrender.com/uploads/:path*"
+    },
+    {
+      "source": "/((?!api/|uploads/|assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
