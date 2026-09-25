@@ -113,6 +113,7 @@ jobs:
           DB_NAME: campus-connect-test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
+          DB_SSLMODE: disable
           JWT_SECRET: CI_TestSecretKey_MinimumThirtyTwoCharacters
 
   # ─── Post Service ────────────────────────────────────────
@@ -159,6 +160,7 @@ jobs:
           DB_NAME: campus-connect-test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
+          DB_SSLMODE: disable
           JWT_SECRET: CI_TestSecretKey_MinimumThirtyTwoCharacters
 
   # ─── Docker Compose Validation ───────────────────────────
